@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web Audio API examples: MediaElementAudioSource()</title>
+    <style>
+      body {
+        padding: 100px;
+      }
+      audio,
+      input[type="file"] {
+        width: 671px;
+      }
+      input[type="range"] {
+        transform: rotate(-90deg);
+      }
+      button {
+        font-size: 16px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Web Audio API examples: createScriptProcessor()</h1>
+    <hr />
+
+    <h3 style="color: blue">
+      超高清【8K UHD (7680 × 4320)】， 全景声(WANOS)【 (128个声道 和
+      128个声音对象)编码技术】
+    </h3>
+
+    <br />
+    <br />
+
+    <button type="button" id="LBTN">左声道（L）</button>
+    <input type="range" id="L" min="0" max="100" style="margin-left: 13px" />
+
+    添加本地音视频：<input id="file" type="file" />
+
+    <input type="range" id="R" min="0" max="100" />
+    <button type="button" id="RBTN">右声道（R）</button>
+
+    <br /><br /><br />
+    <br /><br /><br />
+
+    <div>
+      <button type="button" id="SLBTN">左环绕（SL）</button>
+      <input type="range" id="SL" min="0" max="100" />
+
+      <video mute loop controls width="800">
+        <source src="./media/Project DT-5.1.mp4" type="video/mp4" />
+        <p>This demo needs a browser supporting the &lt;video&gt; element.</p>
+      </video>
+
+      <input type="range" id="SR" min="0" max="100" />
+      <button type="button" id="SRBTN">右环绕（SR）</button>
+    </div>
+
+    <script>
+      (function (global, factory) {
+        "use strict";
+        let isInit = true;
+        document.onclick = function () {
+          if (isInit) {
+            isInit = false;
+            factory(global);
+            document.onclick = null;
+          }
+        };
+      })(globalThis, function () {
+        const ac = new (window.AudioContext || window.webkitAudioContext)();
+        const audio = document.querySelector("video");
+        audio.crossOrigin = "anonymous"; // cross-origin - if file is stored on remote server 跨原点-如果文件存储在远程服务器上
+
+        let source;
+        let audioData = [];
+
+        // audio.addEventListener(
+        //   "canplaythrough", // loadedmetadata
+        //   function () {
+        //     source = ac.createMediaElementSource(audio);
+        //     source.connect(processor);
+        //     source.connect(ac.destination);
+        //     processor.connect(ac.destination);
+
+        //     audio.play();
+        //   },
+        //   false
+        // );
+
+        const channelCount = 4; // or read from: 'audioSource.channelCount'
+
+        const audioSource = ac.createMediaElementSource(audio);
+
+        const processor = ac.createScriptProcessor(2048, 4, 4);
+        audioSource.connect(processor);
+        // audioSource.connect(ac.destination);
+        processor.connect(ac.destination);
+
+        // 通道分配器
+        const splitterNode = new ChannelSplitterNode(ac, {
+          numberOfOutputs: channelCount,
+        });
+
+        // 通道合并器
+        const mergerNode = new ChannelMergerNode(ac, {
+          numberOfInputs: channelCount,
+        });
+
+        const volumeNodeL = new GainNode(ac, { gain: 2 });
+        const volumeNodeR = new GainNode(ac, { gain: 2 });
+        const volumeNodeSL = new GainNode(ac, { gain: 2 });
+        const volumeNodeSR = new GainNode(ac, { gain: 2 });
+
+        audioSource.connect(splitterNode);
+
+        splitterNode.connect(volumeNodeL, 0); // connect OUTPUT channel 0
+        splitterNode.connect(volumeNodeR, 1); // connect OUTPUT channel 1
+        splitterNode.connect(volumeNodeSL, 2); // connect OUTPUT channel 2
+        splitterNode.connect(volumeNodeSR, 3); // connect OUTPUT channel 3
+
+        volumeNodeL.connect(mergerNode, 0, 0); // connect INPUT channel 0
+        volumeNodeR.connect(mergerNode, 0, 1); // connect INPUT channel 1
+        volumeNodeSL.connect(mergerNode, 0, 2); // connect INPUT channel 2
+        volumeNodeSR.connect(mergerNode, 0, 3); // connect INPUT channel 3
+
+        mergerNode.connect(ac.destination);
+
+        // 循环PCM数据并计算平均值
+        // 给定2048样本缓冲区的体积
+        processor.onaudioprocess = function (evt) {
+          // console.log("音频通道数量：", evt.inputBuffer.numberOfChannels);
+          {
+            let input = evt.inputBuffer.getChannelData(0),
+              len = input.length,
+              total = (i = 0),
+              rms;
+            while (i < len) {
+              total += Math.abs(input[i++]);
+            }
+            rms = Math.sqrt(total / len);
+
+            if (volumeNodeL.gain.value) {
+              // console.log(input, rms, rms * 100);
+              L.value = rms * 200;
+            }
+          }
+
+          {
+            let input = evt.inputBuffer.getChannelData(1),
+              len = input.length,
+              total = (i = 0),
+              rms;
+            while (i < len) {
+              total += Math.abs(input[i++]);
+            }
+            rms = Math.sqrt(total / len);
+
+            if (volumeNodeR.gain.value) {
+              R.value = rms * 200;
+            }
+          }
+
+          {
+            let input = evt.inputBuffer.getChannelData(2),
+              len = input.length,
+              total = (i = 0),
+              rms;
+            while (i < len) {
+              total += Math.abs(input[i++]);
+            }
+            rms = Math.sqrt(total / len);
+
+            if (volumeNodeSL.gain.value) {
+              SL.value = rms * 200;
+            }
+          }
+
+          {
+            let input = evt.inputBuffer.getChannelData(3),
+              len = input.length,
+              total = (i = 0),
+              rms;
+            while (i < len) {
+              total += Math.abs(input[i++]);
+            }
+            rms = Math.sqrt(total / len);
+
+            if (volumeNodeSR.gain.value) {
+              SR.value = rms * 200;
+            }
+          }
+        };
+
+        {
+          // const audio = new Audio("./media/202107.mp4");
+          let isPlaying;
+          function playPause() {
+            // check if context is in suspended state (autoplay policy)
+            if (ac.state === "suspended") {
+              ac.resume();
+            }
+
+            isPlaying = !isPlaying;
+            if (isPlaying) {
+              // gainNode.gain.exponentialRampToValueAtTime(1, 1); // 在1秒的时间内指数增长到1，实现一个播放渐入效果
+              audio.play();
+            } else {
+              audio.pause();
+            }
+          }
+
+          LBTN.onclick = function () {
+            volumeNodeL.gain.value = Number(!volumeNodeL.gain.value);
+            console.log(volumeNodeL.gain.value);
+          };
+
+          RBTN.onclick = function () {
+            volumeNodeR.gain.value = Number(!volumeNodeR.gain.value);
+            console.log(volumeNodeR.gain.value);
+          };
+
+          SLBTN.onclick = function () {
+            volumeNodeSL.gain.value = Number(!volumeNodeSL.gain.value);
+            console.log(volumeNodeSL.gain.value);
+          };
+
+          SRBTN.onclick = function () {
+            volumeNodeSR.gain.value = Number(!volumeNodeSR.gain.value);
+            console.log(volumeNodeSR.gain.value);
+          };
+        }
+
+        file.addEventListener("change", function () {
+          const file = this.files[0];
+          console.log(file);
+          if ("video/mp4".startsWith("video")) {
+            // video.src = window.URL.createObjectURL(file);
+            audio.src = window.URL.createObjectURL(file);
+          } else {
+            audio.src = window.URL.createObjectURL(file);
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

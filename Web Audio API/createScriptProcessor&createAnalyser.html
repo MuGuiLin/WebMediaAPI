@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      Web createScriptProcessor and createAnalyser API 视音频流信息提取
+    </title>
+    <style>
+      body {
+        padding: 100px;
+      }
+      button,
+      div {
+        margin: 10px;
+        font-size: 16px;
+      }
+      canvas {
+        display: block;
+        height: 200px;
+        border: 1px solid gray;
+      }
+      progress,
+      canvas {
+        width: 800px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Web createScriptProcessor and createAnalyser API 视音频流信息提取</h1>
+    <hr />
+
+    <h3>提取方法1：ac.createScriptProcessor()</h3>
+    <audio loop src="./media/Project DT-5.1.mp4" controls></audio>
+    <!-- <audio loop src="./media/AAC-5.1.mp4" controls></audio> -->
+    <br />
+    <button type="button" id="play">播放 / 暂停</button>
+    <button type="button" id="volume">静音 / 取消静音</button>
+    <br />
+    <br />
+    左声道响度（L）：<progress id="oneL" max="100" value="0"></progress>
+    <br />
+    <br />
+    右声道响度（R）：<progress id="oneR" max="100" value="0"></progress>
+    <br />
+    <br />
+    左环绕响度（SL）：<progress id="oneSL" max="100" value="0"></progress>
+    <br />
+    <br />
+    右环绕响度（SR）：<progress id="oneSR" max="100" value="0"></progress>
+    <br />
+    <br />
+    <hr />
+    <br />
+    <br />
+
+    <h3>提取方法2 ac.createAnalyser()</h3>
+    <video id="video" loop src="./media/AAC-5.1.mp4" controls></video>
+    <br />
+    <h4>单通道</h4>
+    <canvas id="canvas"></canvas>
+
+    <h4>多通道</h4>
+    左声道响度（L）：<progress id="VUL" max="100" value="0"></progress>
+    <br />
+    <br />
+    右声道响度（R）：<progress id="VUR" max="100" value="0"></progress>
+
+    <script>
+      let ac = null;
+      try {
+        ac = new (window.AudioContext || window.webkitAudioContext)();
+      } catch (e) {
+        alert("请更新至最新版的 Chrome 或者 Firefox");
+      }
+
+      /*
+      udioContext 获取 audio 源的原理是这样的：
+        sourceNode -> scriptProcessor -> destinationNode
+        1、audio有一个内置的输出通道
+        2、AudioContext 通过 createMediaElementSource 将 audio 的输出直接拉去到新的环境中，之前 audio 环境被破坏了， 所以一定要连接  audioSource.connect(ac.destination)
+        3、拉去的 audioSource 没有 start 函数，他会一直监听 audio 的操控，当 play 函数被触发的时候，开始播放音频。也可以认为，play 函数触发了 start （老版浏览器中是 noteOn）
+      */
+
+      // 提取方法1： createScriptProcessor()
+      {
+        // 音频源
+        const audio = document.querySelector("audio");
+        const audioSource = ac.createMediaElementSource(audio);
+        audioSource.connect(ac.destination); //注：要将音频源连接到AudioContext上下文中
+        console.log(audioSource);
+
+        play.onclick = () => {
+          audio.paused ? audio.play() : audio.pause();
+        };
+
+        volume.onclick = () => {
+          audio.volume = Number(!audio.volume);
+        };
+
+        const scriptProcessor = ac.createScriptProcessor(2048, 4, 4);
+        audioSource.connect(scriptProcessor); // 注：要将scriptProcessor 连接到 audioSource 后e.inputBuffer.getChannelData(0)才能获取到音频信息
+        console.log("scriptProcessor", scriptProcessor);
+
+        // 性能不好
+        scriptProcessor.onaudioprocess = function (e) {
+          const l = e.inputBuffer.getChannelData(0);
+          const r = e.inputBuffer.getChannelData(1);
+          const sl = e.inputBuffer.getChannelData(2);
+          const sr = e.inputBuffer.getChannelData(3);
+
+          // 对左右声道进行处理，如：计算音量大小
+          for (let i = 0; i < l.length; i++) {
+            oneL.value = l[i] * 100;
+            oneR.value = r[i] * 100;
+            oneSL.value = sl[i] * 100;
+            oneSR.value = sr[i] * 100;
+          }
+        };
+
+        audio.addEventListener("playing", function () {
+          scriptProcessor.connect(ac.destination); //注：要将scriptProcessor 连接到 AudioContext 后才会触发 onaudioprocess
+        });
+
+        audio.addEventListener("pause", function () {
+          scriptProcessor.disconnect();
+        });
+
+        audio.addEventListener("ended", function () {
+          scriptProcessor.disconnect();
+        });
+      }
+
+      const video = document.querySelector("#video");
+      const audioSource = ac.createMediaElementSource(video);
+      audioSource.connect(ac.destination); //注：要将音频源连接到AudioContext上下文中
+
+            // 提取方法2-1： createAnalyser() // 可以用来获取音频时间和频率数据，以及实现数据可视化。
+      {
+        const analyser = ac.createAnalyser();
+        audioSource.connect(analyser); // 注：要将analyser 连接到 audioSource 后analyser.getByteTimeDomainData(arrayBuffer)才能获取到音频信息
+        analyser.connect(ac.destination); //注：要将scriptProcessor 连接到 AudioContext 后才会触发 onaudioprocess
+        console.log("analyser", analyser);
+
+        // 注：对“AnalyserNode”执行“getByteTimeDomainData”：参数1的类型只能是“Uint8Array”。
+        // analyser.fftSize = 4096;
+        // const arrayBuffer = new Uint16Array(analyser.fftSize);
+
+        // analyser.fftSize = 2048; // 默认2048;
+        analyser.fftSize = 1024; // 默认2048;
+        const arrayBuffer = new Uint8Array(analyser.fftSize);
+        console.log(arrayBuffer);
+
+        const canvas = document.querySelector("#canvas");
+        const ctx = canvas.getContext("2d");
+        let timer = null;
+
+        function animate() {
+          // 用 requestAnimationFrame() 来反复获取时域数据;
+          analyser.getByteTimeDomainData(arrayBuffer);
+
+          ctx.fillStyle = "rgb(222, 222, 222)";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          ctx.lineWidth = 1;
+          ctx.strokeStyle = "green";
+
+          ctx.beginPath();
+
+          const sliceWidth = (canvas.width * 1.0) / analyser.fftSize;
+          let x = 0;
+          for (let i = 0; i < analyser.fftSize; i++) {
+            const v = arrayBuffer[i] / 128.0;
+            const y = (v * canvas.height) / 2;
+            if (i === 0) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+            x += sliceWidth;
+          }
+
+          ctx.lineTo(canvas.width, canvas.height / 2);
+          ctx.stroke();
+
+          timer = requestAnimationFrame(animate);
+        }
+
+        video.addEventListener("playing", function () {
+          animate();
+        });
+
+        video.addEventListener("ended", function () {
+          cancelAnimationFrame(timer);
+        });
+
+        video.addEventListener("pause", function () {
+          cancelAnimationFrame(timer);
+        });
+      }
+
+
+
+      // 提取方法2-2： createAnalyser() 多声道
+      {
+        const analyserL = ac.createAnalyser();
+        const analyserR = ac.createAnalyser();
+
+        audioSource.connect(analyserL);
+        audioSource.connect(analyserR);
+
+        audioSource.connect(ac.destination);
+
+        const L = new StereoPannerNode(ac, { pan: -1 });
+        console.log("StereoPannerNode L", L);
+        const R = new StereoPannerNode(ac, { pan: 1 });
+        console.log("StereoPannerNode R", R);
+
+        analyserL.fftSize = 32;
+        const bufferLengthL = analyserL.frequencyBinCount;
+        const frequencyDataL = new Float32Array(bufferLengthL);
+
+        analyserR.fftSize = 32;
+        const bufferLengthR = analyserR.frequencyBinCount;
+        const frequencyDataR = new Float32Array(bufferLengthR);
+
+        let i = 0,
+          job,
+          origin = new Date().getTime();
+        const timer = () => {
+          if (new Date().getTime() - i > origin) {
+            analyserL.getFloatFrequencyData(frequencyDataL);
+            analyserR.getFloatFrequencyData(frequencyDataR);
+
+            let vL =
+              Object.values(frequencyDataL).reduce((a, b) => a + b, 0) * -0.05;
+            let vR =
+              Object.values(frequencyDataR).reduce((a, b) => a + b, 0) * -0.05;
+
+            VUL.value = ~~vL;
+            VUR.value = ~~vR;
+
+            i = i + 41; // 24 FPS
+            job = requestAnimationFrame(timer);
+          } else if (job !== null) {
+            requestAnimationFrame(timer);
+          }
+        };
+        requestAnimationFrame(timer);
+      }
+    </script>
+  </body>
+</html>

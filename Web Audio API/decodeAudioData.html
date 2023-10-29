@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>decodeAudioData()</title>
+    <style>
+      :root {
+        --code-background-inline: #666;
+      }
+      body {
+        padding: 100px;
+      }
+      div {
+        margin-bottom: 20px;
+      }
+      code {
+        padding: 0.125rem 0.25rem;
+        width: -webkit-fit-content;
+        width: -moz-fit-content;
+        width: fit-content;
+        font-size: 16px;
+        color: white;
+        background: var(--code-background-inline);
+      }
+      input[type="range"] {
+        transform: rotate(-90deg);
+      }
+      progress {
+        margin-top: 60px;
+        width: 100%;
+      }
+      #progress-bar {
+        width: 100%;
+        height: 10px;
+        border-radius: 5px;
+        background-color: #eee;
+        border: 1px solid gray;
+        cursor: pointer;
+        overflow: hidden;
+      }
+
+      #myProgress {
+        width: 0%;
+        height: inherit;
+        border-radius: 10px;
+        background-color: #00a0e9;
+        background-image: linear-gradient(
+          -45deg,
+          rgba(255, 255, 255, 0.15) 25%,
+          transparent 25%,
+          transparent 50%,
+          rgba(255, 255, 255, 0.15) 50%,
+          rgba(255, 255, 255, 0.15) 75%,
+          transparent 75%,
+          transparent
+        );
+        background-size: 10px;
+        animation: 1s linear infinite progress-bar-stripes;
+      }
+      @keyframes progress-bar-stripes {
+        0% {
+          background-position-x: -10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>
+      通过ac.decodeAudioData()方法 将ArrayBuffer对象 异步解码为 AudioBuffer对象
+    </h1>
+    <hr />
+    <p>
+      <a href="https://developer.mozilla.org/zh-CN/docs/Web/API/AudioContext"
+        >AudioContext</a
+      >接口的 <code>decodeAudioData()</code> 方法可用于异步解码音频文件中的
+      <a
+        href="https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer"
+        >ArrayBuffer</a
+      >。<code>ArrayBuffer</code> 数据可以通过
+      <a href="https://developer.mozilla.org/zh-CN/docs/Web/API/XMLHttpRequest"
+        >XMLHttpRequest</a
+      >
+      和
+      <a href="https://developer.mozilla.org/zh-CN/docs/Web/API/FileReader"
+        >FileReader</a
+      >
+      来获取。AudioBuffer 是通过 AudioContext
+      采样率进行解码的，然后通过回调返回结果。
+    </p>
+
+    <h4>本地视音频文件点播</h4>
+    <div>
+      <input type="file" id="file" placeholder="请选择音频文件" />
+      <input type="range" id="L" min="0" max="100" />
+      <button id="start">启动</button>
+      <button id="play">播放 / 暂停</button>
+      <button id="step">停止</button>
+      <input type="range" id="R" min="0" max="100" />
+      <br />
+
+      <p>
+        <progress id="progress" max="100" value="0"></progress>
+        播放时间：<b id="playTime">00:00:00</b>， 播放进度：<b id="progressVal"
+          >00.00</b
+        >
+        %
+      </p>
+      <div id="progress-bar" onclick="getClickPosition(event)">
+        <div id="myProgress"></div>
+      </div>
+    </div>
+
+    <hr />
+
+    <h4>自动加载本地视音频文件播放</h4>
+    <div>
+      <button type="button" id="LBTN">静音左声道</button>
+      <button type="button" id="PBTN">播放 / 暂停</button>
+      <button type="button" id="RBTN">静音右声道</button>
+    </div>
+
+    <script>
+      function getClickPosition(event) {
+        const clickX =
+          event.clientX - event.target.getBoundingClientRect().left;
+        const progressBarWidth = event.target.offsetWidth;
+
+        const clickPercent = (clickX / progressBarWidth) * 100;
+
+        console.log("点击位置的百分比：", clickPercent);
+
+        myProgress.style.width = clickPercent + "%";
+      }
+
+      // 秒转换时分钟00:00:00时分秒格式
+      function timeToMinute(times) {
+        let t;
+        if (times > -1) {
+          const hour = Math.floor(times / 3600);
+          const min = Math.floor(times / 60) % 60;
+          const sec = times % 60;
+          if (hour) {
+            t = "0" + hour + ":";
+          } else {
+            t = hour + ":";
+          }
+          if (min) {
+            t += "0";
+          }
+          t += min + ":";
+          if (sec) {
+            t += "0";
+          }
+          t += sec.toFixed(2);
+        }
+        t = t.substring(0, t.length - 3);
+        return t;
+      }
+
+      // 00:00:00时分秒格式转化为秒
+      function timeEvent(e) {
+        const time = e;
+        const len = time.split(":");
+        if (len.length == 3) {
+          const hour = time.split(":")[0];
+          const min = time.split(":")[1];
+          const sec = time.split(":")[2];
+          return Number(hour * 3600) + Number(min * 60) + Number(sec);
+        }
+        if (len.length == 2) {
+          const min = time.split(":")[0];
+          const sec = time.split(":")[1];
+          return Number(min * 60) + Number(sec);
+        }
+        if (len.length == 1) {
+          const sec = time.split(":")[0];
+          return Number(sec);
+        }
+      }
+
+      {
+        const ac = new (window.AudioContext || window.webkitAudioContext)();
+        ac.onstatechange = function (event) {
+          console.log("AudioContext的状态发生变化时执行：", ac.state);
+          console.log("AudioContext的event：", event);
+          console.log("AudioContext：", ac);
+        };
+
+        const processor = ac.createScriptProcessor(2048, 2, 2);
+
+        let bufferSource = null;
+        let audioBuffer = [];
+
+        file.addEventListener("change", function () {
+          const file = this.files[0];
+          const fr = new FileReader();
+
+          fr.addEventListener("load", function (e) {
+            // 通过decodeAudioData() 解码后返回的 audioBuffer 就是可操作对象啦！！
+            ac.decodeAudioData(
+              e.target.result,
+              function (adoBuffer) {
+                console.log("音乐载入完毕：", adoBuffer);
+                audioBuffer = adoBuffer;
+
+                /* 写到 decodeAudioData 事件内部，当音乐加载完毕后才能执行启动播放和停止 */
+                start.onclick = function () {
+                  console.log("启动播放");
+
+                  // 创建 AudioBufferSourceNode
+                  bufferSource = ac.createBufferSource(); // 必须在播放时重新创建 bufferSource 对象，否则会出现不能再次播放的问题
+                  // bufferSource = ac.createMediaElementSource(audioBuffer);
+                  bufferSource.buffer = audioBuffer; // AudioBuffer数据赋值给audioBuffer属性
+
+                  console.log("AudioBufferSourceNode", bufferSource);
+                  processor.connect(ac.destination);
+                  bufferSource.connect(processor);
+
+                  bufferSource.connect(ac.destination); // 如果只是播放音频，这边就直接将bufferSource连接到AudioDestinationNode
+
+                  // bufferSource.start(0, ac.currentTime || 0); // ac.currentTime => 当前已播放的时间，开始播放音频
+                  bufferSource.start(0); // 开始播放音频
+                  console.log("音乐状态:", ac.state);
+                };
+
+                // 停止
+                step.onclick = function () {
+                  console.log("停止");
+                  processor.disconnect(); // 停止processor
+                  bufferSource.stop(0); // 停止播放音乐
+                  console.log("音乐状态:", ac.state);
+                };
+              },
+              function (err) {
+                console.log(err);
+              }
+            );
+          });
+          fr.readAsArrayBuffer(file);
+        });
+
+        // 循环PCM数据并计算平均值
+        // 给定2048样本缓冲区的体积
+        processor.onaudioprocess = function (evt) {
+          // console.log(evt.inputBuffer);
+          // console.log("音频通道数：", evt.inputBuffer.numberOfChannels);
+          {
+            let input = evt.inputBuffer.getChannelData(0),
+              len = input.length,
+              total = (i = 0),
+              rms;
+            while (i < len) {
+              total += Math.abs(input[i++]);
+            }
+            rms = Math.sqrt(total / len);
+
+            // console.log(input, rms, rms * 100);
+            L.value = rms * 100;
+            R.value = rms * 100;
+          }
+
+          /*{
+            const L = evt.inputBuffer.getChannelData(0);
+            const R = evt.inputBuffer.getChannelData(1);
+            // console.log(L, R);
+
+            // 对左右声道进行处理，例如，计算音量大小
+            for (let i = 0; i < L.length; i++) {
+              L.value = L[i];
+              R.value = R[i];
+            }
+          };*/
+          const val = ((ac.currentTime / audioBuffer.duration) * 100).toFixed(2);
+          progress.value = val;
+          progressVal.innerText = val;
+          myProgress.style.width = val + "%";
+          playTime.innerText = timeToMinute(ac.currentTime);
+        };
+
+        progress.onclick = function (e) {
+          console.log(e);
+        };
+
+        play.onclick = function () {
+          if ("suspended" === ac.state) {
+            ac.resume(); // 激活AudioContext
+            processor.connect(ac.destination);
+          }
+          if ("running" === ac.state) {
+            ac.suspend(); // 挂起AudioContext
+            processor.disconnect();
+          }
+        };
+      }
+
+      {
+        const audio = new Audio("./media/202107.mp4");
+        audio.crossOrigin = "anonymous"; // cross-origin - if file is stored on remote server
+
+        const video = document.createElement("video");
+        video.controls = true;
+        video.crossOrigin = "anonymous";
+        video.src = "./media/202107.mp4"; // 先加载视频文件
+
+        document.body.append(video);
+        console.dir(audio);
+        console.dir(video);
+
+        let timer = null;
+
+        const audioContext = new (window.AudioContext ||
+          window.webkitAudioContext)();
+        const analyser = audioContext.createAnalyser();
+
+        const audioSource = audioContext.createMediaElementSource(video);
+
+        const volumeNodeL = new GainNode(audioContext);
+        const volumeNodeR = new GainNode(audioContext);
+
+        volumeNodeL.gain.value = 2;
+        volumeNodeR.gain.value = 2;
+
+        const channelsCount = 2; // or read from: 'audioSource.channelCount'
+
+        const splitterNode = new ChannelSplitterNode(audioContext, {
+          numberOfOutputs: channelsCount,
+        });
+        const mergerNode = new ChannelMergerNode(audioContext, {
+          numberOfInputs: channelsCount,
+        });
+
+        audioSource.connect(splitterNode);
+
+        splitterNode.connect(volumeNodeL, 0); // connect OUTPUT channel 0
+        splitterNode.connect(volumeNodeR, 1); // connect OUTPUT channel 1
+
+        volumeNodeL.connect(mergerNode, 0, 0); // connect INPUT channel 0
+        volumeNodeR.connect(mergerNode, 0, 1); // connect INPUT channel 1
+
+        mergerNode.connect(audioContext.destination);
+
+        let isPlaying;
+        function playPause() {
+          // check if context is in suspended state (autoplay policy)
+          if (audioContext.state === "suspended") {
+            audioContext.resume();
+          }
+
+          isPlaying = !isPlaying;
+          if (isPlaying) {
+            video.play();
+          } else {
+            video.pause();
+          }
+        }
+
+        function setBalance(val) {}
+
+        LBTN.onclick = function () {
+          volumeNodeL.gain.value = Number(!volumeNodeL.gain.value);
+          console.log(volumeNodeL.gain.value);
+        };
+
+        PBTN.onclick = function () {
+          playPause();
+        };
+
+        RBTN.onclick = function () {
+          volumeNodeR.gain.value = Number(!volumeNodeR.gain.value);
+          console.log(volumeNodeR.gain.value);
+        };
+
+        // 获取音频数据的频率和通道数
+        const bufferLength = analyser.frequencyBinCount;
+        const buffer = new Uint8Array(bufferLength);
+
+        function update() {
+          // 使用requestAnimationFrame确保音频采样率与系统时间同步
+          analyser.getByteFrequencyData(buffer);
+
+          // 使用傅里叶变换获取频率数据后，可以处理每个频率值
+          for (let i = 0; i < bufferLength; i++) {
+            // console.log(i, buffer[i]);
+          }
+
+          // 每一帧更新时都会调用update方法，因此可以在此继续处理其他音频数据
+          timer = requestAnimationFrame(update);
+        }
+
+        /*
+        【HTML5——视频/音频加载过程中发生的事件，会依次触发如下事件】
+
+          1. loadstart 事件 当浏览器开始寻找指定的音频/视频时，即开始加载视频时。
+
+          2. durationchange 事件 当指定音频/视频的时长数据发生变化时。当音频/视频加载后，时长将由 "NaN" 变为音频/视频的实际时长。
+
+          3. loadedmetadata 事件 音频/视频的元数据包括：时长、尺寸（仅视频）以及文本轨道。当指定的音频/视频的元数据已加载时。
+
+          4. loadeddata 事件 当当前帧的数据已加载，但没有足够的数据来播放指定音频/视频的下一帧时。
+
+          5. progress 事件 当浏览器正在下载指定的音频/视频时。
+
+          6. canplay 事件 当浏览器能够开始播放指定的音频/视频时。
+
+          7. canplaythrough 事件 当浏览器预计能够在不停下来进行缓冲的情况下持续播放指定的音频/视频时。
+        */
+
+        video.addEventListener("loadstart", function (event) {
+          console.log("加载过程开始");
+        });
+        video.addEventListener("durationchange", function (event) {
+          console.log(
+            "当指定音频/视频的时长数据发生变化时，发生 durationchange 事件"
+          );
+        });
+        video.addEventListener("loadedmetadata", function (event) {
+          // 当视频元数据加载完成后，连接AnalyserNode
+          analyser.connect(audioContext.destination);
+          // this.play();
+
+          console.log(
+            "当指定的音频/视频的元数据已加载时，会发生 loadedmetadata 事件"
+          );
+        });
+
+        video.addEventListener("loadeddata", function (event) {
+          console.log(
+            "当当前帧的数据已加载，但没有足够的数据来播放指定音频/视频的下一帧时，会发生 loadeddata 事件"
+          );
+        });
+
+        video.addEventListener("progress", function (event) {
+          console.log(
+            "当浏览器正在下载指定的音频/视频时，会发生 progress 事件"
+          );
+        });
+
+        video.addEventListener("canplay", function (event) {
+          console.log(
+            "当浏览器能够开始播放指定的音频/视频时，发生 canplay 事件"
+          );
+        });
+
+        video.addEventListener("canplaythrough", function (event) {
+          console.log(
+            "当浏览器预计能够在不停下来进行缓冲的情况下持续播放指定的音频/视频时，会发生 canplaythrough 事件"
+          );
+        });
+
+        video.addEventListener("play", function (event) {
+          console.log("开始播放");
+        });
+
+        video.addEventListener("playing", function (event) {
+          console.log("播放中");
+        });
+
+        video.addEventListener("timeupdate", function (event) {
+          // 当前时间发生更改时执行的操作
+          // console.log("播放进度");
+          // 获取当前时间
+          const currentTime = this.currentTime;
+
+          // 获取总持续时间
+          const duration = this.duration;
+
+          //获取当前播放的百分比 = 当前进度 ÷ 总进度
+          const percent = currentTime / duration;
+
+          console.log("播放进度：", parseInt(percent * 100) + "%");
+        });
+
+        video.addEventListener("waiting", function (event) {
+          console.log("加载中");
+        });
+
+        video.addEventListener("pause", function (event) {
+          console.log("暂停播放");
+          cancelAnimationFrame(timer);
+        });
+
+        video.addEventListener(
+          "ended",
+          function (event) {
+            console.log("播放结束");
+            cancelAnimationFrame(timer);
+          },
+          false
+        );
+      }
+    </script>
+  </body>
+</html>

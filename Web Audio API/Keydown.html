@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Keydown</title>
+    <style>
+      body {
+        padding: 100px;
+      }
+      div {
+        padding: 30px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Web Audio AudioBuffer API</h1>
+    <hr />
+    <p>
+      <b>AudioBuffer API：</b>
+      <br />是表示存在存储器里的短音频资产，利用AudioContext.decodeAudioData()方法从音频文件构建，或者利用
+      AudioContext.createBuffer()构建于原数据。一旦将其放入AudioBuffer，可以传递到一个
+      AudioBufferSourceNode进行播放。
+    </p>
+    <p>
+      <b>缓存区（buffer）包含以下数据：</b>
+      <br />不间断的IEEE75432位线性PCM，从-1到1的范围额定，就是说，32位的浮点缓存区的每个样本在-1.0到1.0之间。如果AudioBuffer有不同的频道，他们通常被曝存在独立的缓存区。
+    </p>
+    <div>
+      <p>
+        本质并不是从键盘获取，而是通过键盘获取到我们设定的频率值，然后通过程序创建一段音频。如下实例：该例子中可以按键盘上中间的一排按键（A到K）来发出不同的声音。
+      </p>
+      <img src="./img/波形类型.png" alt="波形类型" />
+      <br />
+      <br />
+      波形声调基本类型：<select id="select">
+        <option value="sine">sine - 正弦波</option>
+        <option value="square">square - 方波</option>
+        <option value="sawtooth">sawtooth - 锯齿波</option>
+        <option value="triangle">triangle - 三角波</option>
+      </select>
+      <h3>A，S，D，F，G，H，J，K</h3>
+      <h1 id="h1"></h1>
+    </div>
+
+    <hr />
+
+    <div>
+      <p>在以下输入框中输入不同的数值以发出不同的声音。</p>
+      <input
+        type="number"
+        id="frequency"
+        min="1"
+        value="256"
+        placeholder="请输入音频率（数字类型）"
+      />
+      <button id="play">播放 / 暂停-音频率</button>
+    </div>
+
+    <hr />
+
+    <div>
+      <button id="whiteNoiseBtn" style="font-size: 18px">
+        Make white noise 点击发出白噪音
+      </button>
+
+      <button id="whiteNoiseBtn2" style="font-size: 18px">
+        Make white noise 点击发出白噪音2
+      </button>
+    </div>
+
+    <script>
+      let oscillatorType = "sine";
+      {
+        let ac = null;
+        try {
+          ac = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+          alert("请更新至最新版的 Chrome 或者 Firefox");
+        }
+
+        // 为每个键盘位对应一个音频率
+        const audio = {
+          65: 256,
+          83: 288,
+          68: 320,
+          70: 341,
+          71: 384,
+          72: 426,
+          74: 480,
+          75: 512,
+        };
+        const temp = { ...audio };
+
+        // 为每个频率创建一个Oscillator
+
+        for (let i in audio)
+          (value = audio[i]),
+            (audio[i] = ac.createOscillator()), // 振荡器，它产生一个周期的波形信号（如正弦波）
+            (audio[i].type = oscillatorType),
+            (audio[i].frequency.value = value),
+            audio[i].start();
+
+        // 键盘按下时将相应频率的Oscillator连接到输出源上
+        addEventListener("keydown", function (e) {
+          h1.innerText = `按键值：${e.keyCode}，音频率：${
+            temp[e.keyCode] || "---"
+          }`;
+          if ((e = audio[e.keyCode])) {
+            e.connect(ac.destination);
+          }
+        });
+
+        // 键盘松开时将相应频率的Oscillator的连接取消
+        addEventListener("keyup", function (e) {
+          if ((e = audio[e.keyCode])) e.disconnect();
+        });
+
+        select.addEventListener("change", function () {
+          for (let i in audio) audio[i].type = this.value;
+        });
+      }
+
+      {
+        const ac = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = ac.createOscillator();
+        let isPlay = true;
+
+        oscillator.type = oscillatorType;
+        oscillator.frequency.setValueAtTime(256, ac.currentTime); // 以赫兹为单位的值
+        oscillator.connect(ac.destination);
+        oscillator.start();
+        console.dir(oscillator);
+
+        frequency.onchange = function () {
+          const value = this.value || 1;
+          oscillator.frequency.setValueAtTime(value, ac.currentTime);
+        };
+
+        play.onclick = () => {
+          // isPlay ? oscillator.stop() : oscillator.start();
+          isPlay ? oscillator.disconnect() : oscillator.connect(ac.destination);
+          isPlay = !isPlay;
+        };
+      }
+
+      {
+        // 自发白噪音实例
+        const ac = new (window.AudioContext || window.webkitAudioContext)();
+
+        const channels = 6;
+        //  以AudioContext的采样率创建一个空的两秒立体声缓冲区
+        const frameCount = ac.sampleRate * 2.0;
+
+        const myArrayBuffer = ac.createBuffer(
+          channels,
+          frameCount,
+          ac.sampleRate
+        );
+
+        whiteNoiseBtn.onclick = function () {
+          //用白噪声填充缓冲区；
+          let nowBuffering = [];
+          //只是-1.0和1.0之间的随机值
+          for (let channel = 0; channel < channels; channel++) {
+            //这为我们提供了包含数据的实际ArrayBuffer
+            nowBuffering = myArrayBuffer.getChannelData(channel);
+            for (let i = 0; i < frameCount; i++) {
+              //Math.random（）在[0；1.0]中
+              //音频需要在[-1.0；1.0]中
+              nowBuffering[i] = Math.random() * 2 - 1;
+            }
+          }
+          console.log(myArrayBuffer.numberOfChannels);
+          console.log("白噪声填充缓冲区：", nowBuffering);
+        };
+      }
+
+      {
+        // 自发白噪音实例2
+        whiteNoiseBtn2.onclick = function () {
+          let ac;
+          function init() {
+            ac = new (window.AudioContext || window.webkitAudioContext)();
+          }
+          if (!ac) {
+            init();
+          }
+
+          // 立体声 2.0(L, R)
+          const channels = 2.0;
+
+          // 以AudioContext的采样率创建一个空的两秒立体声缓冲区
+          const frameCount = ac.sampleRate * 2.0;
+
+          // AudioBuffer对象是一个音频专用Buffer对象，包含很多音频信息
+          const buffer = new AudioBuffer({
+            // duration: 2.00, // AudioBuffer.duration 音频时长 只读 返回存储在缓存区的PCM数据的时长：双精度型（单位为秒）。
+            numberOfChannels: channels, // AudioBuffer.numberOfChannels 声道数量 只读 返回存储在缓存区的PCM数据的通道数：整形。
+            length: frameCount, // AudioBuffer.length 只读 返回存储在缓存区的PCM数据的采样帧率：整形。
+            sampleRate: ac.sampleRate, // AudioBuffer.sampleRate 采样率 只读 存储在缓存区的PCM数据的采样率：浮点数，单位为 sample/s。
+          });
+
+          /**
+          AudioBuffer 对象的相关音频声道数据处理方法：
+            buffer.getChannelData(0); // 获取通道数据 返回一个 Float32Array，包含了带有频道的PCM数据，由频道参数定义（有0代表第一个频道）
+            buffer.copyFromChannel(); // 复制通道数据 从AudioBuffer的指定频道复制到数组终端。
+            buffer.copyToChannel(); // 写入通道数据 复制样品到原数组的AudioBuffer的指定频道
+          */
+
+          // 往音频通道中 添加白噪音音频数据
+          for (let channel = 0; channel < channels; channel++) {
+            const channelData = buffer.getChannelData(0);
+            console.log("channelData 0:", channelData);
+
+            const channelData1 = buffer.getChannelData(1);
+            console.log("channelData 1:", channelData1);
+
+            // const channelData2 = buffer.getChannelData(2);
+            // console.log("channelData 2:", channelData2);
+
+            // This gives us the actual array that contains the data
+            const nowBuffering = buffer.getChannelData(channel);
+
+            for (let i = 0; i < frameCount; i++) {
+              // Math.random() is in [0; 1.0]
+              //音频流数据 nowBuffering[i]：-1.0 到 1.0之间；
+              nowBuffering[i] = Math.random() * 2 - 1;
+            }
+          }
+
+          //获取AudioBufferSourceNode。
+          //这是要播放AudioBuffer时要使用的AudioNode
+          const source = ac.createBufferSource();
+          // Set the buffer in the AudioBufferSourceNode
+          source.buffer = buffer;
+          // Connect the AudioBufferSourceNode to the
+          // destination so we can hear the sound
+          source.connect(ac.destination);
+          // start the source playing
+          source.start();
+
+          source.onended = () => {
+            console.log("白噪音结束。");
+          };
+        };
+      }
+    </script>
+  </body>
+</html>

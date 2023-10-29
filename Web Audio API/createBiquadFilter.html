@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web createBiquadFilter API 音频滤波器</title>
+    <style>
+      body {
+        padding: 100px;
+      }
+      button, select {
+        margin: 10px;
+        padding: 5px;
+        font-size: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Web createBiquadFilter API 音频滤波器</h1>
+    <hr />
+    <p>
+      <a href="https://developer.mozilla.org/zh-CN/docs/Web/API/BaseAudioContext/createBiquadFilter" target="_block">音频滤波器</a>
+      AudioContext 的createBiquadFilter()方法创建了一个<a href="https://developer.mozilla.org/zh-CN/docs/Web/API/BiquadFilterNode" target="_block">BiquadFilterNode</a>, 它提供了一个可以指定多个不同的一般滤波器类型的双二阶滤波器。
+    </p>
+
+    <h4>原始音频</h4>
+    <audio src="./media/hlbb.mp3" id="origin" controls></audio>
+
+    <br />
+    <hr />
+    <h4>过滤音频</h4>
+    <div>
+      滤波器类型（变声）：<select id="select">
+        <option value="lowpass">lowpass - 低通滤波</option>
+        <option value="highpass">highpass - 高通滤波</option>
+        <option value="bandpass">bandpass - 带通滤波</option>
+        <option value="lowshelf">lowshelf - 低架滤波</option>
+        <option value="highshelf">highshelf - 高架滤波</option>
+        <option value="peaking">peaking - 峰值滤波</option>
+        <option value="notch">notch - 标准陷波滤波</option>
+        <option value="allpass">allpass - 标准二阶全通滤波</option>
+      </select>
+      <button onclick="audio.play()" />滤波播放</button>
+      <button onclick="audio.pause()"/>滤波暂停</button>
+    </div>
+    <audio src="./media/hlbb.mp3" id="audio" controls></audio>
+    
+    <script>
+    ; (function (global, factory) {
+      'use strict';
+      let isInit = true;
+      document.onclick = function () {
+        if (isInit) {
+          isInit = false;
+          factory(global);
+          document.onclick = null;
+        }
+      };
+    }(globalThis, function () {
+      let ac = null;
+      try {
+        ac = new (window.AudioContext || window.webkitAudioContext)();
+      } catch (e) {
+        alert("请更新至最新版的 Chrome 或者 Firefox");
+      }
+      const audio = document.querySelector('#audio');
+      const source = ac.createMediaElementSource(audio);
+
+      // 低通滤波节点（高频信号被过滤，听到的声音会很沉闷） // http://web.h3399.cn/BiquadFilterNode.htm
+      const filter = ac.createBiquadFilter("lowpass");
+
+      filter.Q.value = 1; // 峰值滤波器的带宽
+      filter.frequency.value = 1000; // 中心频率
+      filter.gain.value = 5; // 增益，单位db
+
+      source.connect(filter);
+      filter.connect(ac.destination);
+
+      select.addEventListener("change", function () {
+        filter.type = this.value;
+        console.log("createBiquadFilter 过滤器：", filter);
+      });
+    }));
+    </script>
+  </body>
+</html>

@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web GainNode API 音量控制器</title>
+    <style>
+      body {
+        padding: 100px;
+      }
+
+      button {
+        margin: 10px;
+        font-size: 18px;
+      }
+
+       progress {
+        width: 600px;
+      }
+
+      table, th, td{
+        border: 1px solid gray;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Web Audio API GainNode 音量控制器</h1>
+    <p>
+      <h3><a target="_block" href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Basic_concepts_behind_Web_Audio_API">Web 音频 API 背后的基本概念</a></h3>
+      <a href="https://developer.mozilla.org/zh-CN/docs/Web/API/GainNode">GainNode</a> 接口表示音量的变化。它是一个 AudioNode
+      音频处理模块，在输出前使用给定增益应用到输入。一个 GainNode
+      始终只有一个输入和一个输出，两者拥有同样数量的声道。
+      增益是一个无单位的值，会对所有输入声道的音频进行相应的增加（相乘）。如果进行了修改，则会立即应用新增益，从而在结果音频中产生奇怪的“咔嗒”声。为了防止这种情况发生，请不要直接更改值，而应在
+      AudioParam 接口上使用指数插值方法。
+    </p>
+    <hr />
+    <br />
+
+    <audio controls loop src="./media/hlbb.mp3"></audio>
+
+    <br />
+    <label
+      >音量控制器：
+      <input type="range" id="gain" value="1" min="0" max="5" />
+      <button class="mute">静音（mute）</button>
+    </label>
+
+    <br />
+    <br />
+    <h3>多通道音量控制</h3>
+
+    <!--- <audio id="audio" loop controls src="./media/hlbb.mp3"></audio> -->
+    <video id="audio" loop controls src="./media/202107.mp4"></video>
+
+    <br />
+    <label>音量控制器（L）：
+      <input type="range" id="Lgain" value="1" min="0" max="5" />
+      <button class="Lmute">静音（mute）</button>
+      声道响度（L）：<progress id="Lvu" max="100" value="0"></progress>
+    </label>
+    <br />
+    <label>音量控制器（R）：
+      <input type="range" id="Rgain" value="1" min="0" max="5" />
+      <button class="Rmute">静音（mute）</button>
+      声道响度（R）：<progress id="Rvu" max="100" value="0"></progress>
+    </label>
+    <br />
+    <label>音量控制器（SL）：
+      <input type="range" id="SLgain" value="1" min="0" max="5" />
+      <button class="SLmute">静音（mute）</button>
+      声道响度（SL）：<progress id="SLvu" max="100" value="0"></progress>
+    </label>
+    <br />
+    <label>音量控制器（SR）：
+      <input type="range" id="SRgain" value="1" min="0" max="5" />
+      <button class="SRmute">静音（mute）</button>
+      声道响度（SR）：<progress id="SRvu" max="100" value="0"></progress>
+    </label>
+
+    <script>
+      let ac = null;
+      try {
+        ac = new (window.AudioContext || window.webkitAudioContext)();
+      } catch (e) {
+        alert("请更新至最新版的 Chrome 或者 Firefox");
+      }
+
+      // 整体 ac.createGain() 音量控制 【这里是将：音频源、音频输出和音频处理模块连接一块儿，造成可控制音量大小的音频。】
+      {
+        const audio = document.querySelector("audio");
+        const source = ac.createMediaElementSource(audio);
+        // 它将一个或多个音频源和输出作为输入 音量已将增益（音量）调整到节点的 GainNode.gain a-rate 参数指定的电平的音频。
+        const gainNode = ac.createGain();
+        source.connect(gainNode);
+        gainNode.connect(ac.destination);
+
+        const oscillator = ac.createOscillator();
+        // 音频节点：通道计数模式属性 channelCountMode
+        // oscillator.channelCountMode = "max";
+        // oscillator.channelCountMode = "clamped-max";
+        oscillator.channelCountMode = "explicit";
+
+        oscillator.connect(gainNode);
+
+        console.log("音频通道数：", oscillator.channelCount);
+
+        const mute = document.querySelector(".mute");
+        mute.onclick = () => {
+          if ("" === mute.id) {
+            // gainNode.gain.setValueAtTime(0, ac.currentTime);
+            gainNode.gain.value = 0;
+            mute.id = "activated";
+            mute.textContent = "取消静音";
+          } else {
+            gainNode.gain.setValueAtTime(1, ac.currentTime);
+            // gainNode.gain.value = 1;
+            mute.id = "";
+            mute.textContent = "静音（mute）";
+          }
+          console.log("当前播放时长：", ac.currentTime);
+        };
+
+        gain.oninput = function () {
+          // gainNode.gain.value 正常值应在：0 到 1 之间 太大会爆音！！
+          gainNode.gain.value = this.value;
+        };
+      }
+
+
+
+ 
+      // 多通道（单声道、立体声、四声道、5.1、6.1、9.1） new new GainNode(context, options) 各通道音量独立控制 
+      {
+        const audio = document.querySelector("#audio");
+        const source = ac.createMediaElementSource(audio);
+        source.channelCount = 4;
+
+        // https://developer.mozilla.org/en-US/docs/Web/API/GainNode/GainNode
+        const gainNode1 = new GainNode(ac, {
+          gain: 1,   // 默认：1， 范围（-∞，+∞）
+          channelCount: 1, // 连接到节点的任何输入时使用的通道数
+          channelCountMode: 'explicit', // 描述通道之间必须匹配的方式 节点的输入和输出 https://developer.mozilla.org/en-US/docs/Web/API/AudioNode/channelCountMode
+          channelInterpretation: 'speakers',  // 'discrete'// 音频节点通道解释属性 https://developer.mozilla.org/en-US/docs/Web/API/AudioNode/channelInterpretation
+        });
+
+        const gainNode2 = new GainNode(ac);
+
+        const splitterNode = new ChannelSplitterNode(ac, { numberOfOutputs: source.channelCount });
+        const mergerNode = new ChannelMergerNode(ac, { numberOfInputs: source.channelCount });
+
+        source.connect(splitterNode);
+
+        splitterNode.connect(gainNode1, 0); // connect OUTPUT channel 0
+        splitterNode.connect(gainNode2, 1); // connect OUTPUT channel 1
+
+        gainNode1.connect(mergerNode, 0, 0); // connect INPUT channel 0
+        gainNode2.connect(mergerNode, 0, 1); // connect INPUT channel 1
+
+        mergerNode.connect(ac.destination);
+
+
+        console.log(gainNode1)
+
+        Lgain.oninput = function () {
+          gainNode1.gain.value = this.value;
+        };
+
+        Rgain.oninput = function () {
+          gainNode2.gain.value = this.value;
+        };
+
+        const Lmute = document.querySelector(".Lmute");
+        Lmute.onclick = () => {
+          if ("" === Lmute.id) {
+            gainNode1.gain.value = 0;
+            Lmute.id = "activated";
+            Lmute.textContent = "取消静音";
+          } else {
+            gainNode1.gain.value = 1;
+            Lmute.id = "";
+            Lmute.textContent = "静音（mute）";
+          }
+        };
+
+        const Rmute = document.querySelector(".Rmute");
+        Rmute.onclick = () => {
+          if ("" === Rmute.id) {
+            gainNode2.gain.value = 0;
+            Rmute.id = "activated";
+            Rmute.textContent = "取消静音";
+          } else {
+            gainNode2.gain.value = 1;
+            Rmute.id = "";
+            Rmute.textContent = "静音（mute）";
+          }
+        };
+
+
+        // 多通道音频流
+      {
+        const analyserL = ac.createAnalyser();
+        const analyserR = ac.createAnalyser();
+
+        source.connect(analyserL);
+        source.connect(analyserR);
+        // source.connect(ac.destination);
+
+        const L = new StereoPannerNode(ac, {pan: -1});
+        const R = new StereoPannerNode(ac, {pan: 1});
+
+        analyserL.fftSize = 32;
+        const bufferLengthL = analyserL.frequencyBinCount;
+        const frequencyDataL = new Float32Array(bufferLengthL);
+
+        analyserR.fftSize = 32;
+        const bufferLengthR = analyserR.frequencyBinCount;
+        const frequencyDataR = new Float32Array(bufferLengthR);
+
+        let i = 0, job, origin = new Date().getTime();
+        const timer = () => {
+          if (new Date().getTime() - i > origin){
+            analyserL.getFloatFrequencyData(frequencyDataL);
+            analyserR.getFloatFrequencyData(frequencyDataR);
+
+            let lv = Object.values(frequencyDataL).reduce((a,b) => a + b, 0)*-0.05
+            let rv = Object.values(frequencyDataR).reduce((a,b) => a + b, 0)*-0.05
+
+            if(gainNode1.gain.value){
+               Lvu.value = ~~lv
+            }
+           
+            if(gainNode2.gain.value){
+              Rvu.value = ~~rv
+            }
+           
+            i = i + 41 // 24 FPS
+            job = requestAnimationFrame(timer);
+          } else if (job !== null){
+              requestAnimationFrame(timer)
+          }
+        }
+
+        requestAnimationFrame(timer)
+      }
+    }
+
+      
+    </script>
+
+
+    <section aria-labelledby="audio_channels"><h2 id="audio_channels"><a href="#audio_channels" _msttexthash="16720977" _msthash="162">音频通道</a></h2>
+    <div class="section-content"><p>每个音频缓冲区可能包含不同数量的通道。大多数现代音频设备使用基本的单声道（只有一个声道）和<em _istranslated="1">立体</em>声（左声道和右<em _istranslated="1">声道</em>）设置。一些更复杂的设置支持<em _istranslated="1">环绕声</em>设置（如<em _istranslated="1">四边形</em>和 <em _istranslated="1">5.1</em>），由于其高通道数，这可以带来更丰富的声音体验。我们通常使用下表中详述的标准缩写来表示频道：</p>
+      <figure class="table-container">
+      <h3>目前声音技术发展的四个阶段：单声道  ——>  立体声  ——>  N(2、3、4、5...).1环绕声(2D|二维)  ——>  全景声(3D|三维) </h3>
+      <table>
+        <thead>
+          <tr>
+            <th>名字</th>
+            <th>通道说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><em>单声道 1.0</em></td>
+            <td><code>0: M: mono（单声道）</code></td>
+          </tr>
+          <tr>
+            <td><em>立体声 2.0</em></td>
+            <td><code>0: L: left（左声道）  |  1: R: right（右声道）</code></td>
+          </tr>
+          <tr>
+            <td><em>立体声 2.1</em></td>
+            <td><code>0: L: left（左声道）  |  1: R: right（右声道）  |  3: LFE: subwoofer（低音炮）</code></td>
+          </tr>
+          <tr>
+            <td><em>四声道 4.0</em></td>
+            <td><code>0: L: left（左声道）  |  1: R: right（右声道）  |  2: SL: surround left（左环绕）  |  3: SR: surround right（右环绕）</code></td>
+          </tr>
+            <tr>
+            <td><em>四声道 4.1</em></td>
+            <td><code>0: L: left（左声道）  |  1: R: right（右声道）  |  2: SL: surround left（左环绕）  |  3: SR: surround right（右环绕）  |  4: LFE: subwoofer（低音炮）</code></td>
+          </tr>
+          <tr>
+            <td><em>声道5.1</em></td>
+            <td><code>0: L: left（左声道）  |  1: R: right（右声道）  |  2: C: center（中置）  |  3: LFE: subwoofer（低音炮）  |  4: SL: surround left（左环绕）  |  5: SR: surround right（右环绕）</code></td>
+          </tr>
+          <tr>
+            <td><em>声道7.1</em></td>
+            <td><code>0: L: left（左声道）  |  1: R: right（右声道）【两个前置环绕】  |  2: C: center（中置）  |  3: LFE: subwoofer（低音炮）  |  4: SL: surround left（侧左环绕）  |  5: SR: surround right（侧右环绕）【两个中侧环绕】 6: SL: surround left（后左环绕）  |  7: SR: surround right（后右环绕）【两个后置环绕】</code></td>
+          </tr>
+        </tbody>
+      </table></figure></div></section>
+      <section aria-labelledby="up-mixing_and_down-mixing"><h3 id="up-mixing_and_down-mixing"><a href="#up-mixing_and_down-mixing" _msttexthash="13900913" _msthash="170">上混和下混</a></h3><div class="section-content"><p><font _mstmutation="1" _msttexthash="738716927" _msthash="171">当输入和输出的通道数不匹配时，必须进行上混或下混。以下规则（通过将 <a href="https://developer.mozilla.org/en-US/docs/Web/API/AudioNode/channelInterpretation" target="_block">AudioNode.channelInterpretation</a> 属性设置为 或 来控制）适用：</font><code>speakers</code><code>discrete</code></p>
+      <figure class="table-container"><table class="standard-table">
+        <thead>
+          <tr>
+            <th scope="row" _msttexthash="7093697" _msthash="172">解释</th>
+            <th scope="col" _msttexthash="14630993" _msthash="173">输入通道</th>
+            <th scope="col" _msttexthash="14646489" _msthash="174">输出通道</th>
+            <th scope="col" _msttexthash="11657555" _msthash="175">混合规则</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th rowspan="13" scope="row"><code>speakers</code></th>
+            <td><code>1</code> <em _msttexthash="24963133" _msthash="176">（单声道）</em></td>
+            <td><code>2</code> <em _msttexthash="23882534" _msthash="177">（立体声）</em></td>
+            <td>
+              <font _mstmutation="1" _msttexthash="227432049" _msthash="178"><em _mstmutation="1" _istranslated="1">从单声道到立体声的上混</em>。<br _mstmutation="1" _istranslated="1">输入
+      通道用于两个输出通道（和）。</font><code>M</code><code>L</code><code>R</code><br><code>output.L = input.M<br>output.R = input.M</code>
+            </td>
+          </tr>
+          <tr>
+            <td><code>1</code> <em _msttexthash="24963133" _msthash="179">（单声道）</em></td>
+            <td><code>4</code> <em _msttexthash="15892461" _msthash="180">（四声道）</em></td>
+            <td>
+              <font _mstmutation="1" _msttexthash="560493349" _msthash="181"><em _mstmutation="1" _istranslated="1">从单声道到四声道的上混。</em><br _mstmutation="1" _istranslated="1">输入通道
+      用于非环绕声输出通道（和）。环绕声输出通道（和）是静音的。</font><code>M</code><code>L</code><code>R</code><code>SL</code><code>SR</code><br><code>output.L = input.M<br>output.R = input.M<br>output.SL = 0<br>output.SR
+      = 0</code>
+            </td>
+          </tr>
+          <tr>
+            <td><code>1</code> <em _msttexthash="24963133" _msthash="182">（单声道）</em></td>
+            <td><code>6</code> <em _msttexthash="26767" _msthash="183">(5.1声道)</em></td>
+            <td>
+              <font _mstmutation="1" _msttexthash="432961152" _msthash="184"><em _mstmutation="1" _istranslated="1">从单声道向上混音到 5.1。</em><br _mstmutation="1" _istranslated="1">输入通道
+      用于中央输出通道 （）。所有其他
+      （、、、 和 ） 是无声的。</font><code>M</code><code>C</code><code>L</code><code>R</code><code>LFE</code><code>SL</code><code>SR</code><br><code>output.L = 0<br>output.R = 0</code><br><code>output.C = input.M<br>output.LFE = 0<br>output.SL = 0<br>output.SR
+      = 0</code>
+            </td>
+          </tr>
+          <tr>
+            <td><code>2</code> <em _msttexthash="23882534" _msthash="185">（立体声）</em></td>
+            <td><code>1</code> <em _msttexthash="24963133" _msthash="186">（单声道）</em></td>
+            <td>
+              <font _mstmutation="1" _msttexthash="413846056" _msthash="187"><em _mstmutation="1" _istranslated="1">从立体声到单声道的下混</em>。<br _mstmutation="1" _istranslated="1">两个输入通道（和）均等地组合以产生唯一的输出
+      通道 （）。</font><code>L</code><code>R</code><code>M</code><br><code>output.M = 0.5 * (input.L + input.R)</code>
+            </td>
+          </tr>
+          <tr>
+            <td><code>2</code> <em _msttexthash="23882534" _msthash="188">（立体声）</em></td>
+            <td><code>4</code> <em _msttexthash="15892461" _msthash="189">（四声道）</em></td>
+            <td>
+              <font _mstmutation="1" _msttexthash="666955159" _msthash="190"><em _mstmutation="1" _istranslated="1">从立体声到四边形的上混。</em><br _mstmutation="1" _istranslated="1">和输入通道用于其非环绕声各自的
+      输出通道（和）。环绕声输出
+      通道（和）是静默的。</font><code>L</code><code>R </code><code>L</code><code>R</code><code>SL</code><code>SR</code><br><code>output.L = input.L<br>output.R = input.R<br>output.SL = 0<br>output.SR
+      = 0</code>
+            </td>
+          </tr>
+          <tr>
+            <td><code>2</code> <em _msttexthash="23882534" _msthash="191">（立体声）</em></td>
+            <td><code>6</code> <em _msttexthash="26767" _msthash="192">(5.1声道)</em></td>
+            <td>
+              <font _mstmutation="1" _msttexthash="1129320634" _msthash="193"><em _mstmutation="1" _istranslated="1">从立体声到 5.1 的上混。</em><br _mstmutation="1" _istranslated="1">和输入通道用于其非环绕声各自的
+      输出通道（和）。环绕声输出
+      通道（和）以及中心
+      （） 和低音炮 （） 声道，左边
+      沉默。</font><code>L</code><code>R </code><code>L</code><code>R</code><code>SL</code><code>SR</code><code>C</code><code>LFE</code><br><code>output.L = input.L<br>output.R = input.R<br>output.C = 0<br>output.LFE
+      = 0<br>output.SL = 0<br>output.SR = 0</code>
+            </td>
+          </tr>
+          <tr>
+            <td><code>4</code> <em _msttexthash="15892461" _msthash="194">（四声道）</em></td>
+            <td><code>1</code> <em _msttexthash="24963133" _msthash="195">（单声道）</em></td>
+            <td>
+              <font _mstmutation="1" _msttexthash="379941887" _msthash="196"><em _mstmutation="1" _istranslated="1">从四声道到单声道的下混</em>。<br _mstmutation="1" _istranslated="1">所有四个输入通道
+      （、、 和 ）
+      平均组合以产生独特的输出通道
+      ().</font><code>L</code><code>R</code><code>SL</code><code>SR</code><code>M</code><br><code>output.M = 0.25 * (input.L + input.R + </code><code>input.SL + input.SR</code><code>)</code>
+            </td>
+          </tr>
+          <tr>
+            <td><code>4</code> <em _msttexthash="15892461" _msthash="197">（四声道）</em></td>
+            <td><code>2</code> <em _msttexthash="23882534" _msthash="198">（立体声）</em></td>
+            <td>
+              <font _mstmutation="1" _msttexthash="1398352839" _msthash="199"><em _mstmutation="1" _istranslated="1">从四边形到立体声的下混</em>。<br _mstmutation="1" _istranslated="1">两个左输入通道
+      （ 和 ） 相等地组合以产生
+      唯一的左输出通道 （）。同样，两者都正确
+      输入通道（和）均等组合
+      以产生唯一的正确输出通道 （）。</font><code>L</code><code>SL</code><code>L</code><code>R</code><code>SR</code><code>R</code><br><code>output.L = 0.5 * (input.L + input.SL</code><code>)</code><br><code>output.R = 0.5 * (input.R + input.SR</code><code>)</code>
+            </td>
+          </tr>
+          <tr>
+            <td><code>4</code> <em _msttexthash="15892461" _msthash="200">（四声道）</em></td>
+            <td><code>6</code> <em _msttexthash="26767" _msthash="201">(5.1声道)</em></td>
+            <td>
+              <font _mstmutation="1" _msttexthash="708329258" _msthash="202"><em _mstmutation="1" _istranslated="1">从四边形向上混音到 5.1。</em><br _mstmutation="1" _istranslated="1">、、 和输入通道为
+      用于其各自的输出通道（和）。中心（）和低音炮
+      （） 通道保持静音。</font><code>L</code><code>R</code><code>SL</code><code>SR</code><code>L</code><code>R</code><code>C</code><code>LFE</code><br><code>output.L = input.L<br>output.R = input.R<br>output.C = 0<br>output.LFE
+      = 0<br>output.SL = input.SL<br>output.SR = input.SR</code>
+            </td>
+          </tr>
+          <tr>
+            <td><code>6</code> <em _msttexthash="26767" _msthash="203">(5.1声道)</em></td>
+            <td><code>1</code> <em _msttexthash="24963133" _msthash="204">（单声道）</em></td>
+            <td>
+              <font _mstmutation="1" _msttexthash="1499927208" _msthash="205"><em _mstmutation="1" _istranslated="1">从 5.1 向下混音到单声道。</em><br _mstmutation="1" _istranslated="1">左（和）、右（和）和中央
+      通道全部混合在一起。环绕声道略有
+      衰减，常规横向通道进行功率补偿至
+      通过乘以 来使它们计为单个通道。
+      低音炮 （） 声道丢失。</font><code>L</code><code>SL</code><code>R</code><code>SR</code><code>√2/2</code><code>LFE</code><br><code>output.M = 0.7071 * (input.L + input.R) + input.C + 0.5 * (input.SL +
+      input.SR)</code>
+            </td>
+          </tr>
+          <tr>
+            <td><code>6</code> <em _msttexthash="26767" _msthash="206">(5.1声道)</em></td>
+            <td><code>2</code> <em _msttexthash="23882534" _msthash="207">（立体声）</em></td>
+            <td>
+              <font _mstmutation="1" _msttexthash="1794158769" _msthash="208"><em _mstmutation="1" _istranslated="1">从 5.1 向下混音到立体声。</em><br _mstmutation="1" _istranslated="1">中央通道
+      （） 与每个横向环绕声道（或）相加并混入每个横向声道。因为它是混合的
+      低至两个通道，它以较低的功率混合：在每种情况下，它都是
+      乘以。低音炮 （）
+      通道丢失。</font><code>C</code><code>SL</code><code>SR</code><code>√2/2</code><code>LFE</code><br><code>output.L = input.L + 0.7071 * (input.C + input.SL)<br>output.R =
+      input.R </code><code>+ 0.7071 * (input.C + input.SR)</code>
+            </td>
+          </tr>
+          <tr>
+            <td><code>6</code> <em _msttexthash="26767" _msthash="209">(5.1声道)</em></td>
+            <td><code>4</code> <em _msttexthash="15892461" _msthash="210">（四声道）</em></td>
+            <td>
+              <font _mstmutation="1" _msttexthash="1633645832" _msthash="211"><em _mstmutation="1" _istranslated="1">从 5.1 向下混音到四边形。</em><br _mstmutation="1" _istranslated="1">中间 （） 是
+      与横向非环绕声声道（ 和 ）混合。由于它混合到两个通道，因此在
+      低功耗：在每种情况下，它都乘以 .这
+      环绕声道的传递保持不变。低音炮 （）
+      通道丢失。</font><code>C</code><code>L</code><code>R</code><code>√2/2</code><code>LFE</code><br><code>output.L = input.L + 0.7071 * input.C<br>output.R = input.R +
+      0.7071 * input.C<br>output.SL = input.SL<br>output.SR =
+      input.SR</code>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" _msttexthash="22731540" _msthash="212">其他非标准布局</td>
+            <td><font _mstmutation="1" _msttexthash="1196324714" _msthash="213">非标准通道布局的行为就像设置为 .<br _mstmutation="1" _istranslated="1">该规范明确允许将来定义新的扬声器布局。因此，此回退不是面向未来的，因为浏览器在特定数量的通道下的行为将来可能会发生变化。</font><code>channelInterpretation</code><code>discrete</code></td>
+          </tr>
+          <tr>
+            <th rowspan="2" scope="row"><code>discrete</code></th>
+            <td><font _mstmutation="1" _msttexthash="11590761" _msthash="214">任何 （</font><code>x</code>)</td>
+            <td><font _mstmutation="1" _msttexthash="26182481" _msthash="215">任何 （） 其中</font><code>y</code><code>x&lt;y</code></td>
+            <td>
+              <font _mstmutation="1" _msttexthash="643093230" _msthash="216"><em _mstmutation="1" _istranslated="1">上混离散通道。</em><br _mstmutation="1" _istranslated="1">填充每个输出通道
+      它的输入对应项 — 即具有相同索引的输入通道。
+      没有相应输入通道的通道将保持静音。</font></td>
+          </tr>
+          <tr>
+            <td><font _mstmutation="1" _msttexthash="11590761" _msthash="217">任何 （</font><code>x</code>)</td>
+            <td><font _mstmutation="1" _msttexthash="26182481" _msthash="218">任何 （） 其中</font><code>y</code><code>x&gt;y</code></td>
+            <td>
+              <font _mstmutation="1" _msttexthash="653634800" _msthash="219"><em _mstmutation="1" _istranslated="1">下混离散通道。</em><br _mstmutation="1" _istranslated="1">填充每个输出通道
+      它的输入对应项 — 即具有相同索引的输入通道。
+      没有相应输出通道的输入通道将被丢弃。</font></td>
+          </tr>
+        </tbody>
+      </table></figure></div>
+    </section>
+  </body>
+</html>
