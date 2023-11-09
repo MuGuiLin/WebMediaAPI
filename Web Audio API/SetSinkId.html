@@ -88,7 +88,17 @@
     <a href="https://set-sink-id.glitch.me/">查看源代码</a>
 
     <script>
-      {
+    ; (function (global, factory) {
+      'use strict';
+      let isInit = true;
+      document.onclick = function () {
+        if (isInit) {
+          isInit = false;
+          factory(global);
+          document.onclick = null;
+        }
+      };
+    }(globalThis, function () {
         const audioCtx = new window.AudioContext();
         const playBtn = document.querySelector(".play");
         const mediaDeviceBtn = document.querySelector(".media-devices");
@@ -208,7 +218,7 @@
             console.log(`音频输出设备已更改为： ${audioCtx.sinkId}`);
           }
         });
-      }
+      });
     </script>
   </body>
 </html>
