@@ -122,6 +122,17 @@
     </div>
 
     <script>
+	;(function (global, factory) {
+      'use strict';
+      let isInit = true;
+      document.onclick = function () {
+        if (isInit) {
+          isInit = false;
+          factory(global);
+          document.onclick = null;
+        }
+      };
+    }(globalThis, function () {
       function getClickPosition(event) {
         const clickX =
           event.clientX - event.target.getBoundingClientRect().left;
@@ -490,6 +501,7 @@
           false
         );
       }
+	}));
     </script>
   </body>
 </html>
