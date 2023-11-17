@@ -20,7 +20,7 @@
 
 **赫兹**（Hz），是[国际单位制](https://baike.baidu.com/item/国际单位制/1189599?fromModule=lemma_inlink)中[频率](https://baike.baidu.com/item/频率/19505?fromModule=lemma_inlink)的单位，它是每秒钟的周期性变动重复次数的计量。 
 
-赫兹简称赫。每秒钟[振动](https://baike.baidu.com/item/振动/5801166?fromModule=lemma_inlink)（或[振荡](https://baike.baidu.com/item/振荡/838683?fromModule=lemma_inlink)、[波动](https://baike.baidu.com/item/波动/4741381?fromModule=lemma_inlink)）一次为1赫兹，或可写成次/秒，周/秒。因德国科学家赫兹而命名。
+赫兹简称 **赫**。每秒钟[振动](https://baike.baidu.com/item/振动/5801166?fromModule=lemma_inlink)（或[振荡](https://baike.baidu.com/item/振荡/838683?fromModule=lemma_inlink)、[波动](https://baike.baidu.com/item/波动/4741381?fromModule=lemma_inlink)）一次为1赫兹，或可写成次/秒，周/秒。因德国科学家赫兹而命名。
 
 
 
