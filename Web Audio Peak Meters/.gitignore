@@ -1,0 +1,7 @@
+# Dependency directory
+node_modules
+
+lib
+
+src/*-processor.txt
+docs/*.d.ts
