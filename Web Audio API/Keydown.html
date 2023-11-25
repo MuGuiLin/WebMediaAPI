@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script async src="//hm.baidu.com/hm.js?f79493fc378b2235419a88daa91d5f6d"></script>
     <title>Keydown</title>
     <style>
       body {
@@ -40,7 +41,7 @@
         <option value="sawtooth">sawtooth - 锯齿波</option>
         <option value="triangle">triangle - 三角波</option>
       </select>
-      <h3>A，S，D，F，G，H，J，K</h3>
+      <h3>按下：A，S，D，F，G，H，J，K 键试试（还可以尝试同时按下多个）</h3>
       <h1 id="h1"></h1>
     </div>
 
@@ -71,6 +72,18 @@
     </div>
 
     <script>
+     ; (function (global, factory) {
+      'use strict';
+      let isInit = true;
+      document.onclick = function () {
+        if (isInit) {
+          isInit = false;
+          factory(global);
+          document.onclick = null;
+        }
+        return false;
+      };
+    }(globalThis, function () {
       let oscillatorType = "sine";
       {
         let ac = null;
@@ -246,6 +259,7 @@
           };
         };
       }
+    }));
     </script>
   </body>
 </html>
