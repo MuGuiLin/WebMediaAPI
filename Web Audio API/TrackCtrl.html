@@ -195,6 +195,29 @@
           }
         };
 
+        /*
+          缓存区触发事件，连接了createScriptProcessor这个AudioNode就需要在onaudioprocess中，
+          把输入帧的数据，连接到输出帧，扬声器才有声音
+       
+        processor.onaudioprocess = function (e) {
+          let inputBuffer = e.inputBuffer, //输入帧数据，AudioBuffer类型
+            outputBuffer = e.outputBuffer; //输出帧数据， AudioBuffer类型
+          //第一种方式
+          //将inputBuffer第0个通道的数据，复制到outputBuffer的第0个通道，偏移0个字节
+          outputBuffer.copyToChannel(inputBuffer.getChannelData(0), 0, 0);
+          //将inputBuffer第1个通道的数据，复制到outputBuffer的第1个通道，偏移0个字节
+          outputBuffer.copyToChannel(inputBuffer.getChannelData(1), 1, 0);
+          //第二中方式用循环
+          for (var channel = 0; channel < outputBuffer.numberOfChannels; channel++) {
+            let inputData = inputBuffer.getChannelData(channel),
+              outputData = outputBuffer.getChannelData(channel);
+            for (var sample = 0; sample < inputBuffer.length; sample++) {
+              outputData[sample] = inputData[sample];
+            }
+          }
+        }
+        */
+
         {
           // const audio = new Audio("./media/202107.mp4");
           let isPlaying;
