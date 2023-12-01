@@ -36,7 +36,7 @@
     <br />
 
     <button type="button" id="LBTN">左声道（L）</button>
-    <input type="range" id="L" min="0" max="100" style="margin-left: 13px" />
+    <input type="range" id="L" min="-60" max="0" style="margin-left: 13px" />
 
     添加本地音视频：<input id="file" type="file" />
 
@@ -129,6 +129,15 @@
 
         mergerNode.connect(ac.destination);
 
+        
+        function getBaseLog(x, y) {
+          return Math.log(y) / Math.log(x);
+        }
+
+        function dbFromFloat(floatVal) {
+          return getBaseLog(10, floatVal) * 20;
+        }
+
         // 循环PCM数据并计算平均值
         // 给定2048样本缓冲区的体积
         processor.onaudioprocess = function (evt) {
@@ -139,15 +148,17 @@
               total = (i = 0),
               rms;
             while (i < len) {
-              total += Math.abs(input[i++]);
+               L.value = dbFromFloat(input[i++])
+              // total += Math.abs(input[i++]);
             }
-            rms = Math.sqrt(total / len);                                                                                                             撒起娇来也帅，；
-            
+            // rms = Math.sqrt(total / len);                                                                                                             撒起娇来也帅，；
 
-            if (volumeNodeL.gain.value) {
-              // console.log(input, rms, rms * 100);
-              L.value = rms * 200;
-            }
+
+            // if (volumeNodeL.gain.value) {
+            //   // console.log(input, rms, rms * 100);
+            //   L.value = rms * 200;
+            // }
+            
           }
 
           {
