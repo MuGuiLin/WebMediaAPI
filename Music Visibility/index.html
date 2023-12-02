@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>音乐可视化渲染：前端开发中的艺术与技术</title>
+    <meta charset="UTF-8">
+    <script src="./js/echarts.js"></script>
+    <!-- <script src="https://fastly.jsdelivr.net/npm/echarts-gl@2/dist/echarts-gl.min.js"></script> -->
+    <script src="./js/echarts-gl.min.js"></script>
+    <script src="./js/jquery.min.js"></script>
+</head>
+
+<body>
+    <audio id="audio" src="./js/little-star.mp3"></audio>
+    <!-- <audio id="audio" src="./js/ngana-rindu.mp3"></audio> -->
+    <!-- <audio id="audio" src="./till-the-end-of-the-world.mp3"></audio> -->
+
+    <h1>来手搓</h1>
+    <button class="playButton" data-type="manual">手搓</button>
+    <div>
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <h1>上框架</h1>
+    <button class="playButton" data-type="bar">柱状图</button>
+    <button class="playButton" data-type="barWithNegative">正负相交柱状图</button>
+    <button class="playButton" data-type="line">折线图</button>
+    <button class="playButton" data-type="barAndLine">折柱混合</button>
+    <button class="playButton" data-type="polar">极坐标环</button>
+    <button class="playButton" data-type="polarBar">极坐标柱状</button>
+    <button class="playButton" data-type="pie">饼图</button>
+    <button class="playButton" data-type="pieWithNightingale">南丁格尔玫瑰图</button>
+    <button class="playButton" data-type="radar">雷达图</button>
+    <button class="playButton" data-type="scatter">散点图</button>
+    <button class="playButton" data-type="scatterWithBubble">气泡图</button>
+    <button class="playButton" data-type="map">地图</button>
+    <div id="echarts" style="width: 1000px;height:400px;"></div>
+
+    <h1>加点光</h1>
+    <button class="rainbowButton" data-type="by-default">纯色</button>
+    <button class="rainbowButton" data-type="by-index">顺序彩虹</button>
+    <button class="rainbowButton" data-type="by-value">同频彩虹</button>
+
+    <h1>立体感</h1>
+    <button class="playButton" data-type="threeDBar">3D柱状</button>
+
+    <!-- <h1>节奏感</h1> -->
+</body>
+
+<script>
+    let audioElement = document.getElementById('audio');
+    let canvas = document.getElementById('canvas');
+    let playButton = document.getElementById('playButton');
+    let audioContext = new AudioContext();
+
+    let sourceNode = audioContext.createMediaElementSource(audioElement);
+    let analyzerNode = audioContext.createAnalyser();
+
+    sourceNode.connect(analyzerNode);
+    analyzerNode.connect(audioContext.destination);
+
+    analyzerNode.fftSize = 2048;
+    let bufferLength = analyzerNode.frequencyBinCount; // 其值为fftSize的一半
+    let frequencyData = new Uint8Array(bufferLength);
+
+    function resetButton(except) {
+        $('.playButton').each((index, domEle) => {
+            const curEle = $(domEle).data('type');
+            if (except && except === curEle) {
+                return;
+            }
+            const curText = $(domEle).text().split(' ')[0];
+            $(domEle).text(curText);
+        })
+    }
+
+    var curPlayingType = '';
+    $(($) => {
+        $('.playButton').on('click', function () {
+            audioContext.resume();
+            if (audioElement.paused) {
+                audioElement.play();
+                let curText = $(this).text().split(' ')[0];
+                resetButton($(this).data('type'));
+                $(this).text(`${curText} 暂停`);
+                curPlayingType = $(this).data('type');
+            } else {
+                let curText = $(this).text().split(' ')[0];
+                resetButton($(this).data('type'));
+
+                if (curPlayingType !== $(this).data('type')) {
+                    $(this).text(`${curText} 暂停`);
+                    curPlayingType = $(this).data('type');
+                } else {
+                    audioElement.pause();
+                    $(this).text(`${curText} 播放`);
+                }
+            }
+            console.log('curPlayingType: ', curPlayingType);
+        });
+    });
+
+    function setIntervalUsingSetTimeout(callback, delay, params, isExcuteCallback = false) {
+        // 第一个参数是回调函数，第二个参数是延迟时间（毫秒）  
+        let timerId = setTimeout(function () {
+            if (!isExcuteCallback) {
+                return;
+            }
+            callback(params);
+            // 在回调执行后再次调用自己，形成循环
+            timerId = setTimeout(arguments.callee, delay, params);
+        }, delay);
+
+        // 返回一个函数，可以用于停止这个定时器  
+        return function () {
+            clearTimeout(timerId);
+        };
+    }
+
+    // 调用定时任务
+    // const stop = setIntervalUsingSetTimeout(renderEcharts, 400);
+
+    // 在需要停止定时器的地方调用这个函数
+    // stop();
+
+    let stopChart = () => { };
+
+    var rainbowColors = {
+        red: 'rgb(255, 0, 0)',
+        orange: 'rgb(255, 165, 0 )',
+        yellow: 'rgb(255, 255, 0',
+        green: 'rgb(144,238,144)',
+        cyan: 'rgb(0,255,255)',
+        blue: 'rgb(0,191,255)',
+        purple: 'rgb(186,85,211)',
+    };
+    var getColorType = 'ignore';
+    $(($) => {
+        $('.rainbowButton').on('click', function () {
+            const curType = $(this).data('type');
+
+            if (getColorType === curType) {
+                getColorType = 'ignore';
+            } else {
+                getColorType = curType;
+            }
+        });
+    });
+
+</script>
+<script src="./js/manual.js"></script>
+<script src="./js/use-lib.js"></script>
+
+</html>
