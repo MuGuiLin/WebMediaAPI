@@ -2,49 +2,66 @@
 <html>
 
 <head>
-    <title>音乐可视化渲染：前端开发中的艺术与技术</title>
     <meta charset="UTF-8">
-    <script src="./js/echarts.js"></script>
-    <!-- <script src="https://fastly.jsdelivr.net/npm/echarts-gl@2/dist/echarts-gl.min.js"></script> -->
-    <script src="./js/echarts-gl.min.js"></script>
     <script src="./js/jquery.min.js"></script>
+    <script src="./js/echarts.js"></script>
+    <script src="./js/echarts-gl.min.js"></script>
+    <script async src="//hm.baidu.com/hm.js?f79493fc378b2235419a88daa91d5f6d"></script>
+    <!-- <script src="https://fastly.jsdelivr.net/npm/echarts-gl@2/dist/echarts-gl.min.js"></script> -->
+    <title>Web前端 - 音乐可视化渲染</title>
+    <style>
+        h1{
+            text-align: center;
+        }
+        .box{
+            padding: 50px;
+        }
+        audio{
+            width: 100%;
+        }
+        button{
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+    </style>
 </head>
 
 <body>
-    <audio id="audio" src="./js/little-star.mp3"></audio>
-    <!-- <audio id="audio" src="./js/ngana-rindu.mp3"></audio> -->
-    <!-- <audio id="audio" src="./till-the-end-of-the-world.mp3"></audio> -->
+    <h1>Web前端 - 音乐可视化渲染</h1>
+    <hr />
 
-    <h1>来手搓</h1>
-    <button class="playButton" data-type="manual">手搓</button>
-    <div>
-        <canvas id="canvas"></canvas>
+    <div class="box">   
+        <audio controls loop id="audio" src="./mp3/程欣-重来.mp3"></audio>
+        <h2>自定义Canvas渲染</h2>
+        <button class="playButton" data-type="manual">操作 / 播放</button>
+        <div>
+            <canvas id="canvas" width="1000" height="300"></canvas>
+        </div>
+
+        <h2>第三方框架渲染</h2>
+        <button class="playButton" data-type="bar">柱状图</button>
+        <button class="playButton" data-type="barWithNegative">正负相交柱状图</button>
+        <button class="playButton" data-type="line">折线图</button>
+        <button class="playButton" data-type="barAndLine">折柱混合</button>
+        <button class="playButton" data-type="polar">极坐标环</button>
+        <button class="playButton" data-type="polarBar">极坐标柱状</button>
+        <button class="playButton" data-type="pie">饼图</button>
+        <button class="playButton" data-type="pieWithNightingale">南丁格尔玫瑰图</button>
+        <button class="playButton" data-type="radar">雷达图</button>
+        <button class="playButton" data-type="scatter">散点图</button>
+        <button class="playButton" data-type="scatterWithBubble">气泡图</button>
+        <button class="playButton" data-type="map">地图</button>
+        <div id="echarts" style="width: 1000px;height:400px;"></div>
+
+        <h2>加点光</h2>
+        <button class="rainbowButton" data-type="by-default">纯色</button>
+        <button class="rainbowButton" data-type="by-index">顺序彩虹</button>
+        <button class="rainbowButton" data-type="by-value">同频彩虹</button>
+
+        <h2>3D立体感渲染</h2>
+        <button class="playButton" data-type="threeDBar">3D柱状</button>
+
     </div>
-
-    <h1>上框架</h1>
-    <button class="playButton" data-type="bar">柱状图</button>
-    <button class="playButton" data-type="barWithNegative">正负相交柱状图</button>
-    <button class="playButton" data-type="line">折线图</button>
-    <button class="playButton" data-type="barAndLine">折柱混合</button>
-    <button class="playButton" data-type="polar">极坐标环</button>
-    <button class="playButton" data-type="polarBar">极坐标柱状</button>
-    <button class="playButton" data-type="pie">饼图</button>
-    <button class="playButton" data-type="pieWithNightingale">南丁格尔玫瑰图</button>
-    <button class="playButton" data-type="radar">雷达图</button>
-    <button class="playButton" data-type="scatter">散点图</button>
-    <button class="playButton" data-type="scatterWithBubble">气泡图</button>
-    <button class="playButton" data-type="map">地图</button>
-    <div id="echarts" style="width: 1000px;height:400px;"></div>
-
-    <h1>加点光</h1>
-    <button class="rainbowButton" data-type="by-default">纯色</button>
-    <button class="rainbowButton" data-type="by-index">顺序彩虹</button>
-    <button class="rainbowButton" data-type="by-value">同频彩虹</button>
-
-    <h1>立体感</h1>
-    <button class="playButton" data-type="threeDBar">3D柱状</button>
-
-    <!-- <h1>节奏感</h1> -->
 </body>
 
 <script>
@@ -82,18 +99,18 @@
                 audioElement.play();
                 let curText = $(this).text().split(' ')[0];
                 resetButton($(this).data('type'));
-                $(this).text(`${curText} 暂停`);
+                $(this).text(`${curText} / 暂停`);
                 curPlayingType = $(this).data('type');
             } else {
                 let curText = $(this).text().split(' ')[0];
                 resetButton($(this).data('type'));
 
                 if (curPlayingType !== $(this).data('type')) {
-                    $(this).text(`${curText} 暂停`);
+                    $(this).text(`${curText} / 暂停`);
                     curPlayingType = $(this).data('type');
                 } else {
                     audioElement.pause();
-                    $(this).text(`${curText} 播放`);
+                    $(this).text(`${curText} / 播放`);
                 }
             }
             console.log('curPlayingType: ', curPlayingType);
