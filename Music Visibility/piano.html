@@ -9,8 +9,13 @@
         body {
             margin: 0;
         }
+        h1{
+            text-align: center;
+        }
         button {
             cursor: pointer;
+             padding: 10px 20px;
+            font-size: 16px;
         }
 
         .audio-wrapper {
@@ -48,7 +53,8 @@
 
         .key:active,
         .key.active {
-            top: -2px;
+            top: -10px;
+            background: blue;
         }
 
         .white {
@@ -83,8 +89,10 @@
 </head>
 
 <body>
+    <h1>Web前端 - 音乐可视化渲染 - 钢琴</h1>
+    <hr />
     <div class="audio-wrapper">
-        <ul class="piano">
+        <ul class="piano" id="piano" >
             <li class="key white" data-f="261.626"></li>
             <li class="key black" data-f="277.183"></li>
             <li class="key white" data-f="293.665"></li>
@@ -191,7 +199,7 @@
 
     const piano = new Piano();
 
-    $('.piano .key').on('click', function () {
+    $('#piano .key').on('click', function () {
         piano.onPlay($(this).data('f'));
         $(this).addClass('active');
         const interval = setTimeout(() => {
@@ -199,17 +207,18 @@
         }, 100);
     });
 
-    const $keys = $('.piano .key.white');
+    const $keys = $('#piano .key.white');
 
     function triggerKey(index) {
         $keys.eq(index).click();
+        console.log(index)
         // const interval = setTimeout(() => {
         //     $keys.eq(index).removeClass('active');
         //     clearTimeout(interval);
         // }, 200);
     }
 
-    $(window).keydown(function (event) {
+    window.onkeydown = function (event) {
         switch (event.keyCode) {
             //  http://unixpapa.com/js/key.html
             case 49:
@@ -256,7 +265,7 @@
                 break;
             default: console.log('other key');
         }
-    });
+    };
 
     let frequencyDataType = 'FrequencyDomain';
 
@@ -293,11 +302,11 @@
         let barHeight;
         let x = 0;
         let ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#2f3640';
+        ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         for (let i = 0; i < frequencyData.length; i++) {
-            barHeight = frequencyData[i];
-            ctx.fillStyle = 'rgb(' + (barHeight + 120) + ',100,50)';
+            barHeight = frequencyData[i] ;
+            ctx.fillStyle = 'rgb(100, 60,' + (barHeight + 180) + ')';
             // ctx.fillStyle = 'rgb(255, 255, 255)';
             ctx.fillRect(x, canvasHeight - barHeight / 2, barWidth, barHeight / 2);
             x += barWidth + 1;
