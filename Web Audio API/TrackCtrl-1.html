@@ -229,7 +229,7 @@
 
           // 右R声道音量大小控制
           VR.oninput = function () {
-            volumeNodeL.gain.setValueAtTime(this.value, ac.currentTime);
+            volumeNodeR.gain.setValueAtTime(this.value, ac.currentTime);
           }; 
 
           // 静音左环绕SL声道
