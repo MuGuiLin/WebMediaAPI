@@ -21,7 +21,8 @@
       input[type="file"] {
         width: 471px;
       }
-      input[type="range"] {
+      meter {
+        width: 128px;
         transform: rotate(-90deg);
       }
       label{
@@ -45,19 +46,20 @@
     <section> 
       <label>
         <button type="button" id="LBTN">左声道（L）</button>
-        <input type="range" id="L" min="-60" max="3" value="-60" style="margin-left: 13px" />
+        <meter id="L" min="-60" max="3" low="-40" optimum="-40" high="-10" value="-60" style="margin-left: 13px"></meter>
+        <input type="range" id="L2" min="-60" max="3" value="-60" class="TBL" style="margin-left: 13px" />
         <span id="TBLV">响度：-60</span>
       </label>
       添加本地视音频：<input id="file" type="file" accept="video/*,audio/*" />
 
-      <input type="range" id="R" min="-60" max="3" />
+      <meter id="R" min="-60" max="3"></meter>
       <button type="button" id="RBTN">右声道（R）</button>
 
       <br /><br />
 
       <div class="box">
         <button type="button" id="SLBTN">左环绕（SL）</button>
-        <input type="range" id="SL" min="-60" max="3" />
+        <meter id="SL" min="-60" max="3"></meter>
 
         <!--<audio  controls loop width="600">
           <source src="./media/xxx.mp3" type="audio/mp3" />
@@ -66,7 +68,7 @@
           <source src="./media/Project DT-5.1.mp4" type="video/mp4" />
         </video>
 
-        <input type="range" id="SR" min="-60" max="3" />
+        <meter id="SR" min="-60" max="3"></meter>
         <button type="button" id="SRBTN">右环绕（SR）</button>
       </div>
     <section>
@@ -86,7 +88,8 @@
 
       // 计算音频跳表数据
       const getDbFromFloat = (floatVal) => {
-        return  (Math.log(10) / Math.log(floatVal)) * 20;
+        const log = (Math.log(10) / Math.log(floatVal)) * 20;
+        return isNaN(log) ? -60 : log;
       };
 
       const audio = document.querySelector("video");
@@ -114,6 +117,7 @@
 
         audio.play();
 
+        const L = document.querySelector('#L')
         // 监听音频处理器每次处理的样本帧
         processor.onaudioprocess = (evt) => {
           // console.log("音频通道数：", evt.inputBuffer.numberOfChannels);
@@ -130,8 +134,13 @@
               len = input.length,
               i = 0;
             while (i < len) {
-              L.value = getDbFromFloat(input[i++]);
-              TBLV.innerText = '响度：' + L.value;
+              const rms = getDbFromFloat(input[i++]);
+              // L.value = getDbFromFloat(input[0]);
+       
+                L.value = rms;
+                TBLV.innerText = '响度：' + rms;
+              
+              
             }
           };
 
@@ -140,9 +149,9 @@
             let input = evt.inputBuffer.getChannelData(1),
               len = input.length,
               i = 0;
-            while (i < len) {
-              R.value = getDbFromFloat(input[i++]);
-            }
+            // while (i < len) {
+              // R.value = getDbFromFloat(input[i++]);
+            // }
           };
 
           {
@@ -150,9 +159,9 @@
             let input = evt.inputBuffer.getChannelData(2),
               len = input.length,
               i = 0;
-            while (i < len) {
-              SL.value = getDbFromFloat(input[i++]);
-            }
+            // while (i < len) {
+              // SL.value = getDbFromFloat(input[i++]);
+            // }
           };
 
           {
@@ -160,9 +169,9 @@
             let input = evt.inputBuffer.getChannelData(3),
               len = input.length,
               i = 0;
-            while (i < len) {
-              SR.value = getDbFromFloat(input[i++]);
-            }
+            // while (i < len) {
+              // SR.value = getDbFromFloat(input[i++]);
+            // }
           };
 
         };
