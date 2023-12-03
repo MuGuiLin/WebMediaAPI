@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script async src="//hm.baidu.com/hm.js?f79493fc378b2235419a88daa91d5f6d"></script>
-    <title>Web前端JS如何获取 Video/Audio 视音频声道(左右声道|多声道)、视音频轨道、音频流数据</title>
+    <title>Web前端JS如何控制 Video/Audio 视音频声道(左右声道|多声道)、视音频轨道、音频流数据</title>
     <style>
       body {
         padding: 50px;
@@ -21,16 +21,30 @@
       input[type="file"] {
         width: 471px;
       }
-      input[type="range"] {
-        transform: rotate(-90deg);
-      }
       label{
         position: relative;
       }
-      #TBLV {
+      .VL, .VR, #VLV, #TBLV {
        position: absolute;
-       top: 80px;
-       right: 30px;
+       top: 30px;
+       left: 0;
+       width: 100px;
+      }
+      .VR {
+        left: auto;
+        right: 0;
+      }
+      #VLV{
+        top: 50px;
+        left: 20px;
+      }
+      #TBLV {
+        left: auto;
+        top: 80px;
+        right: 10px;
+      }
+      .TBL, .TBR, .TBSL, .TBSR {
+        transform: rotate(-90deg);
       }
       button {
         font-size: 16px;
@@ -39,25 +53,30 @@
   </head>
 
   <body>
-    <h1>Web前端JS如何获取 Video/Audio 视音频声道(左右声道|多声道)、视音频轨道、音频流数据</h1>
+    <h1>Web前端JS如何控制 Video/Audio 视音频声道(左右声道|多声道)、视音频轨道、音频流数据</h1>
     <hr />
 
     <section> 
       <label>
         <button type="button" id="LBTN">左声道（L）</button>
-        <input type="range" id="L" min="-60" max="3" value="-60" style="margin-left: 13px" />
+        <input type="range" id="VL" min="0" max="10" step="0.1" class="VL" value="1"/>
+        <span id="VLV">音量：1</span>
+        <input type="range" id="L" min="-60" max="3" value="-60" class="TBL" style="margin-left: 13px" />
         <span id="TBLV">响度：-60</span>
       </label>
       添加本地视音频：<input id="file" type="file" accept="video/*,audio/*" />
 
-      <input type="range" id="R" min="-60" max="3" />
-      <button type="button" id="RBTN">右声道（R）</button>
+      <label>
+        <input type="range" id="R" min="-60" max="3" class="TBR"  />
+        <button type="button" id="RBTN">右声道（R）</button>
+        <input type="range" id="VR" min="0" max="10" step="0.1" class="VR" value="1"/>
+      </label>
 
       <br /><br />
 
       <div class="box">
         <button type="button" id="SLBTN">左环绕（SL）</button>
-        <input type="range" id="SL" min="-60" max="3" />
+        <input type="range" id="SL" min="-60" max="3" class="TBSL"/>
 
         <!--<audio  controls loop width="600">
           <source src="./media/xxx.mp3" type="audio/mp3" />
@@ -66,7 +85,7 @@
           <source src="./media/Project DT-5.1.mp4" type="video/mp4" />
         </video>
 
-        <input type="range" id="SR" min="-60" max="3" />
+        <input type="range" id="SR" min="-60" max="3" class="TBSR" />
         <button type="button" id="SRBTN">右环绕（SR）</button>
       </div>
     <section>
@@ -109,8 +128,38 @@
         const processor = ac.createScriptProcessor(bufferSize, channelCount, channelCount);
         // 链接音频处理器
         audioSource.connect(processor).connect(ac.destination);
-        // 链接到扬声器
-        audioSource.connect(ac.destination);
+        
+        // 创建通道控制器
+        const volumeNodeL = new GainNode(ac, { gain: 1 });
+        const volumeNodeR = new GainNode(ac, { gain: 1 });
+        const volumeNodeSL = new GainNode(ac, { gain: 1 });
+        const volumeNodeSR = new GainNode(ac, { gain: 1 });
+
+        // 创建通道分配器
+        const splitterNode = new ChannelSplitterNode(ac, {
+          numberOfOutputs: channelCount,
+        });
+
+        splitterNode.connect(volumeNodeL, 0); 
+        splitterNode.connect(volumeNodeR, 1); 
+        splitterNode.connect(volumeNodeSL, 2);
+        splitterNode.connect(volumeNodeSR, 3);
+
+        // 控制链接到输入源
+        audioSource.connect(splitterNode);
+
+        // 创建通道合并器
+        const mergerNode = new ChannelMergerNode(ac, {
+          numberOfInputs: channelCount,
+        });
+
+        volumeNodeL.connect(mergerNode, 0, 0); 
+        volumeNodeR.connect(mergerNode, 0, 1); 
+        volumeNodeSL.connect(mergerNode, 0, 2);
+        volumeNodeSR.connect(mergerNode, 0, 3);
+
+        // 通道链接到扬声器
+        mergerNode.connect(ac.destination);
 
         audio.play();
 
@@ -124,7 +173,7 @@
           //获取声轨1输出的缓冲区数据
           // evt.outputBuffer.getChannelData(0);
           
-          {
+          if (volumeNodeL.gain.value) {
             // 声轨1
             let input = evt.inputBuffer.getChannelData(0),
               len = input.length,
@@ -135,7 +184,7 @@
             }
           };
 
-          {
+          if (volumeNodeR.gain.value){
             // 声轨2
             let input = evt.inputBuffer.getChannelData(1),
               len = input.length,
@@ -145,7 +194,7 @@
             }
           };
 
-          {
+          if (volumeNodeSL.gain.value){
             // 声轨3
             let input = evt.inputBuffer.getChannelData(2),
               len = input.length,
@@ -155,7 +204,7 @@
             }
           };
 
-          {
+          if (volumeNodeSR.gain.value){
             // 声轨4
             let input = evt.inputBuffer.getChannelData(3),
               len = input.length,
@@ -166,6 +215,39 @@
           };
 
         };
+
+        // 静音左L声道
+        LBTN.onclick = function () {
+          volumeNodeL.gain.value = Number(!volumeNodeL.gain.value);
+        };
+
+        // 左L声道音量大小控制
+        VL.oninput = function () {
+          // volumeNodeL.gain.value = this.value;
+          volumeNodeL.gain.setValueAtTime(this.value, ac.currentTime);
+          VLV.innerText = '音量：' + this.value;
+        }; 
+
+        // 静音右R声道
+        RBTN.onclick = function () {
+          volumeNodeR.gain.value = Number(!volumeNodeR.gain.value);
+        };
+
+        // 右R声道音量大小控制
+        VR.oninput = function () {
+          volumeNodeL.gain.setValueAtTime(this.value, ac.currentTime);
+        }; 
+
+        // 静音左环绕SL声道
+        SLBTN.onclick = function () {
+          volumeNodeSL.gain.value = Number(!volumeNodeSL.gain.value);
+        };
+
+        // 静音右环绕SR声道
+        SRBTN.onclick = function () {
+          volumeNodeSR.gain.value = Number(!volumeNodeSR.gain.value);
+        };
+        
       }, false );
 
       // 监听音频播放时，激活当前播放
