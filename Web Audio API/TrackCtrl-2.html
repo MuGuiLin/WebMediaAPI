@@ -79,24 +79,9 @@
       const audio = document.querySelector("video");
       audio.crossOrigin = "anonymous"; // cross-origin - if file is stored on remote server 跨原点-如果文件存储在远程服务器上
 
-      let source;
-      let audioData = [];
-
-      // audio.addEventListener(
-      //   "canplaythrough", // loadedmetadata
-      //   function () {
-      //     source = ac.createMediaElementSource(audio);
-      //     source.connect(processor);
-      //     source.connect(ac.destination);
-      //     processor.connect(ac.destination);
-      //     audio.play();
-      //   },
-      //   false
-      // );
-
-      const channelCount = 4; // or read from: 'audioSource.channelCount'
 
       const audioSource = ac.createMediaElementSource(audio);
+       const channelCount = 4 ||audioSource.channelCount; 
 
       await ac.audioWorklet.addModule("processor.js");
       const randomNoiseNode = new AudioWorkletNode(
@@ -141,23 +126,6 @@
         console.log(randomNoiseNode, 666666)
       })
 
-      {
-        // const audio = new Audio("./media/202107.mp4");
-        let isPlaying;
-        function playPause() {
-          // check if context is in suspended state (autoplay policy)
-          if (ac.state === "suspended") {
-            ac.resume();
-          }
-
-          isPlaying = !isPlaying;
-          if (isPlaying) {
-            // gainNode.gain.exponentialRampToValueAtTime(1, 1); // 在1秒的时间内指数增长到1，实现一个播放渐入效果
-            audio.play();
-          } else {
-            audio.pause();
-          }
-        }
 
         LBTN.onclick = function () {
           volumeNodeL.gain.value = Number(!volumeNodeL.gain.value);

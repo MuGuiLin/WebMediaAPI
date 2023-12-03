@@ -66,18 +66,16 @@
         document.onclick = function () {
           if (isInit) {
             isInit = false;
-            factory(global);
+            factory((floatVal) =>(Math.log(10) / Math.log(floatVal)) * 20);
             document.onclick = null;
           }
         };
-      })(globalThis, function () {
+      })(globalThis, function (getDbFromFloatLog) {
         const ac = new (window.AudioContext || window.webkitAudioContext)();
         const audio = document.querySelector("video");
         audio.crossOrigin = "anonymous"; // cross-origin - if file is stored on remote server 跨原点-如果文件存储在远程服务器上
 
-        let source;
-        let audioData = [];
-
+        // let source;
         // audio.addEventListener(
         //   "canplaythrough", // loadedmetadata
         //   function () {
@@ -85,17 +83,11 @@
         //     source.connect(processor);
         //     source.connect(ac.destination);
         //     processor.connect(ac.destination);
-
-        //     audio.play();
-        //   },
-        //   false
-        // );
-
-        const channelCount = 4; // or read from: 'audioSource.channelCount'
-
+        //   }, false );
+      
         const audioSource = ac.createMediaElementSource(audio);
-
-        const processor = ac.createScriptProcessor(2048, 4, 4);
+        const channelCount = 4 || audioSource.channelCount;
+        const processor = ac.createScriptProcessor(2048, channelCount, channelCount);
         audioSource.connect(processor);
         // audioSource.connect(ac.destination);
         processor.connect(ac.destination);
@@ -110,10 +102,11 @@
           numberOfInputs: channelCount,
         });
 
-        const volumeNodeL = new GainNode(ac, { gain: 2 });
-        const volumeNodeR = new GainNode(ac, { gain: 2 });
-        const volumeNodeSL = new GainNode(ac, { gain: 2 });
-        const volumeNodeSR = new GainNode(ac, { gain: 2 });
+        // 通道控制器
+        const volumeNodeL = new GainNode(ac, { gain: 1 });
+        const volumeNodeR = new GainNode(ac, { gain: 1 });
+        const volumeNodeSL = new GainNode(ac, { gain: 1 });
+        const volumeNodeSR = new GainNode(ac, { gain: 1 });
 
         audioSource.connect(splitterNode);
 
@@ -129,36 +122,16 @@
 
         mergerNode.connect(ac.destination);
 
-        
-        function getBaseLog(x, y) {
-          return Math.log(y) / Math.log(x);
-        }
-
-        function dbFromFloat(floatVal) {
-          return getBaseLog(10, floatVal) * 20;
-        }
-
-        // 循环PCM数据并计算平均值
-        // 给定2048样本缓冲区的体积
+        // 循环PCM数据并计算平均值，给定2048样本缓冲区的体积
         processor.onaudioprocess = function (evt) {
           // console.log("音频通道数量：", evt.inputBuffer.numberOfChannels);
           {
             let input = evt.inputBuffer.getChannelData(0),
               len = input.length,
-              total = (i = 0),
-              rms;
+              i = 0;
             while (i < len) {
-               L.value = dbFromFloat(input[i++])
-              // total += Math.abs(input[i++]);
+              L.value = getDbFromFloatLog(input[i++]);
             }
-            // rms = Math.sqrt(total / len);                                                                                                             撒起娇来也帅，；
-
-
-            // if (volumeNodeL.gain.value) {
-            //   // console.log(input, rms, rms * 100);
-            //   L.value = rms * 200;
-            // }
-            
           }
 
           {
@@ -214,11 +187,13 @@
         processor.onaudioprocess = function (e) {
           let inputBuffer = e.inputBuffer, //输入帧数据，AudioBuffer类型
             outputBuffer = e.outputBuffer; //输出帧数据， AudioBuffer类型
+
           //第一种方式
           //将inputBuffer第0个通道的数据，复制到outputBuffer的第0个通道，偏移0个字节
           outputBuffer.copyToChannel(inputBuffer.getChannelData(0), 0, 0);
           //将inputBuffer第1个通道的数据，复制到outputBuffer的第1个通道，偏移0个字节
           outputBuffer.copyToChannel(inputBuffer.getChannelData(1), 1, 0);
+
           //第二中方式用循环
           for (var channel = 0; channel < outputBuffer.numberOfChannels; channel++) {
             let inputData = inputBuffer.getChannelData(channel),
@@ -229,9 +204,7 @@
           }
         }
         */
-
         {
-          // const audio = new Audio("./media/202107.mp4");
           let isPlaying;
           function playPause() {
             // check if context is in suspended state (autoplay policy)
@@ -268,6 +241,26 @@
             console.log(volumeNodeSR.gain.value);
           };
         }
+
+        function hasAudio (video) {
+          return video.mozHasAudio ||
+          Boolean(video.webkitAudioDecodedByteCount) ||
+          Boolean(video.audioTracks && video.audioTracks.length);
+        }
+
+        audio.addEventListener("loadeddata", function() {
+          console.dir(this);
+          console.log(hasAudio(this));
+          if(this.webkitAudioDecodedByteCount){
+            console.log(this.webkitAudioDecodedByteCount);
+          }
+          else if ('WebkitAppearance' in document.documentElement.style){
+            console.log(this.audioTracks, this.audioTracks?.length);
+          }
+          else if (this.mozHasAudio){
+            console.log(this.mozHasAudio, this.mozHasAudio?.length);
+           }
+        });
 
         file.addEventListener("change", function () {
           const file = this.files[0];
