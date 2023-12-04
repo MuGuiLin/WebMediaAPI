@@ -1,182 +1,199 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script async src="//hm.baidu.com/hm.js?f79493fc378b2235419a88daa91d5f6d"></script>
-    <title>Web前端JS如何获取 Video/Audio 视音频声道(左右声道|多声道)、视音频轨道、音频流数据</title>
-    <style>
-      body {
-        padding: 50px;
-      }
-      h1{
-        text-align: center;
-      }
-      section {
-        margin: 100px auto;
-        width: 1200px;
-      }
-      audio,
-      input[type="file"] {
-        width: 471px;
-      }
-      meter {
-        width: 128px;
-        transform: rotate(-90deg);
-      }
-      label{
-        position: relative;
-      }
-      #TBLV {
-       position: absolute;
-       top: 80px;
-       right: 30px;
-      }
-      button {
-        font-size: 16px;
-      }
-    </style>
-  </head>
 
-  <body>
-    <h1>Web前端JS如何获取 Video/Audio 视音频声道(左右声道|多声道)、视音频轨道、音频流数据</h1>
-    <hr />
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script async src="//hm.baidu.com/hm.js?f79493fc378b2235419a88daa91d5f6d"></script>
+  <title>Web前端JS如何获取 Video/Audio 视音频声道(左右声道|多声道)、视音频轨道、音频流数据</title>
+  <style>
+    body {
+      padding: 50px;
+    }
 
-    <section> 
-      <label>
-        <button type="button" id="LBTN">左声道（L）</button>
-        <meter id="L" min="-60" low="-10" high="-3" max="3" value="-60" style="margin-left: 13px"></meter>
-        <span id="TBLV">响度：-60</span>
-      </label>
-      添加本地视音频：<input id="file" type="file" accept="video/*,audio/*" />
+    h1 {
+      text-align: center;
+    }
 
+    section {
+      margin: 100px auto;
+      width: 1200px;
+    }
+
+    audio,
+    input[type="file"] {
+      width: 471px;
+    }
+
+    meter {
+      width: 128px;
+      transform: rotate(-90deg);
+    }
+
+    label {
+      position: relative;
+    }
+
+    #TBLV {
+      position: absolute;
+      top: 80px;
+      right: 30px;
+    }
+
+    #TBRV {
+      position: absolute;
+      top: 80px;
+      left: 30px;
+    }
+
+    button {
+      font-size: 16px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Web前端JS如何获取 Video/Audio 视音频声道(左右声道|多声道)、视音频轨道、音频流数据</h1>
+  <hr />
+
+  <section>
+    <label>
+      <button type="button" id="LBTN">左声道（L）</button>
+      <meter id="L" min="-60" low="-10" high="-3" max="3" value="-60" style="margin-left: 13px"></meter>
+      <span id="TBLV">响度：-60</span>
+    </label>
+    添加本地视音频：<input id="file" type="file" accept="video/*,audio/*" />
+    <label>
       <meter id="R" min="-60" low="-10" high="-3" max="3" value="-60"></meter>
+      <span id="TBRV">响度：-60</span>
       <button type="button" id="RBTN">右声道（R）</button>
+    </label>
+    <br /><br />
 
-      <br /><br />
+    <div class="box">
+      <button type="button" id="SLBTN">左环绕（SL）</button>
+      <meter id="SL" min="-60" low="-10" high="-3" max="3" value="-60"></meter>
 
-      <div class="box">
-        <button type="button" id="SLBTN">左环绕（SL）</button>
-        <meter id="SL" min="-60" low="-10" high="-3" max="3" value="-60"></meter>
-
-        <!--<audio  controls loop width="600">
+      <!--<audio  controls loop width="600">
           <source src="./media/xxx.mp3" type="audio/mp3" />
         </audio>-->
-        <video  controls width="600">
-          <source src="./media/Project DT-5.1.mp4" type="video/mp4" />
-        </video>
+      <video controls width="600">
+        <source src="./media/Project DT-5.1.mp4" type="video/mp4" />
+      </video>
 
-        <meter id="SR" min="-60" low="-10" high="-3" max="3" value="-60"></meter>
-        <button type="button" id="SRBTN">右环绕（SR）</button>
-      </div>
+      <meter id="SR" min="-60" low="-10" high="-3" max="3" value="-60"></meter>
+      <button type="button" id="SRBTN">右环绕（SR）</button>
+    </div>
     <section>
 
-    <script>
-      // 获取本地视音频
-      file.addEventListener("change", function () {
-        const file = this.files[0];
-        console.log(file);
-        if ("video/mp4".startsWith("video")) {
-          // video.src = window.URL.createObjectURL(file);
-          audio.src = window.URL.createObjectURL(file);
-        } else {
-          audio.src = window.URL.createObjectURL(file);
-        }
-      });
+      <script>
+        // 获取本地视音频
+        file.addEventListener("change", function () {
+          const file = this.files[0];
+          console.log(file);
+          if ("video/mp4".startsWith("video")) {
+            // video.src = window.URL.createObjectURL(file);
+            audio.src = window.URL.createObjectURL(file);
+          } else {
+            audio.src = window.URL.createObjectURL(file);
+          }
+        });
 
-      // 计算音频跳表数据
-      const getDbFromFloat = (floatVal) => {
-        const log = (Math.log(10) / Math.log(floatVal)) * 20;
-        return isNaN(log) ? -10.52 : log;
-      };
-
-      // const audio = document.querySelector("audio");
-      const audio = document.querySelector("video");
-      let ac = null;
-
-      // 音频元数据加载后执行
-      audio.addEventListener("loadedmetadata", () => {
-        if(!ac) {
-          // 上下文对象 由于浏览器安全策略要求音频上下文必须在用户事件（单击、键盘按键等）中启用。这意味着，如果您尝试在没有用户事件的情况下自动播放音乐，所以在loadedmetadata元数据已加载时再执行！！
-          ac = new (window.AudioContext || window.webkitAudioContext)();
-
-          // 创建并获取输入源
-          const audioSource = ac.createMediaElementSource(audio);
-          // 缓冲区大小 取值为 2 的幂次方的一个常数
-          const bufferSize = 2048;
-          // 音频通道数 默认值是 2，最高能取 32
-          const channelCount = 4 || audioSource.channelCount;
-
-          // 创建音频处理器
-          const processor = ac.createScriptProcessor(bufferSize, channelCount, channelCount);
-          // 链接音频处理器
-          audioSource.connect(processor).connect(ac.destination);
-          // 链接到扬声器
-          audioSource.connect(ac.destination);
-
-          audio.play();
-
-          const L = document.querySelector('#L')
-          // 监听音频处理器每次处理的样本帧
-          processor.onaudioprocess = (evt) => {
-            // console.log("音频通道数：", evt.inputBuffer.numberOfChannels);
-
-            //获取声轨1输入的缓冲区数据
-            // evt.inputBuffer.getChannelData(0);
-            
-            //获取声轨1输出的缓冲区数据
-            // evt.outputBuffer.getChannelData(0);
-            
-            {
-              // 声轨1
-              let input = evt.inputBuffer.getChannelData(0),
-                len = input.length,
-                i = 0;
-              while (i < len) {
-                L.value = getDbFromFloat(input[i++]);
-                TBLV.innerText = '响度：' + L.value.toFixed(2); 
-              }
-            };
-
-            {
-              // 声轨2
-              let input = evt.inputBuffer.getChannelData(1),
-                len = input.length,
-                i = 0;
-              while (i < len) {
-                R.value = getDbFromFloat(input[i++]);
-              }
-            };
-
-            {
-              // 声轨3 (为了性能，这里不实时计算，只取第1个样本帧计算一次)
-              let input = evt.inputBuffer.getChannelData(2);
-              SL.value = getDbFromFloat(input[0]);
-            };
-
-            {
-              // 声轨4 (为了性能，这里不实时计算，只取中间的计算一次)
-              let input = evt.inputBuffer.getChannelData(3);
-              SR.value = getDbFromFloat(input[input.length / 2]);
-            };
-
-          };
-        } else {
-          audio.play();
+        // 计算音频跳表数据
+        const getDbFromFloat = (float) => {
+          const log = (Math.log(10) / Math.log(float)) * 20;
+          return isNaN(log) ? -10.52 : log;
         };
-      }, false );
 
-      // 监听音频播放时，激活当前播放
-      audio.addEventListener('play', () => {
-        ac.resume();
-      }, false );
+        // const audio = document.querySelector("audio");
+        const audio = document.querySelector("video");
+        let ac = null;
 
-      // 监听音频暂停时，挂起当前播放
-      audio.addEventListener('pause', () => {
-        ac.suspend();
-      }, false );
+        // 音频元数据加载后执行
+        audio.addEventListener("loadedmetadata", () => {
+          if (!ac) {
+            // 上下文对象 由于浏览器安全策略要求音频上下文必须在用户事件（单击、键盘按键等）中启用。这意味着，如果您尝试在没有用户事件的情况下自动播放音乐，所以在loadedmetadata元数据已加载时再执行！！
+            ac = new (window.AudioContext || window.webkitAudioContext)();
 
-    </script>
-  </body>
+            // 创建并获取输入源
+            const audioSource = ac.createMediaElementSource(audio);
+            // 缓冲区大小 取值为 2 的幂次方的一个常数
+            const bufferSize = 2048;
+            // 音频通道数 默认值是 2，最高能取 32
+            const channelCount = 4 || audioSource.channelCount;
+
+            // 创建音频处理器
+            const processor = ac.createScriptProcessor(bufferSize, channelCount, channelCount);
+            // 链接音频处理器
+            audioSource.connect(processor).connect(ac.destination);
+            // 链接到扬声器
+            audioSource.connect(ac.destination);
+
+            audio.play();
+
+            const L = document.querySelector('#L')
+            // 监听音频处理器每次处理的样本帧
+            processor.onaudioprocess = (evt) => {
+              // console.log("音频通道数：", evt.inputBuffer.numberOfChannels);
+
+              //获取声轨1输入的缓冲区数据
+              // evt.inputBuffer.getChannelData(0);
+
+              //获取声轨1输出的缓冲区数据
+              // evt.outputBuffer.getChannelData(0);
+
+              {
+                // 声轨1
+                let input = evt.inputBuffer.getChannelData(0),
+                  len = input.length,
+                  i = 0;
+                while (i < len) {
+                  L.value = getDbFromFloat(input[i++]);
+                  TBLV.innerText = '响度：' + L.value.toFixed(2);
+                }
+              };
+
+              {
+                // 声轨2
+                let input = evt.inputBuffer.getChannelData(1),
+                  len = input.length,
+                  i = 0;
+                while (i < len) {
+                  R.value = getDbFromFloat(input[i++]);
+                  TBRV.innerText = '响度：' + R.value.toFixed(2);
+                }
+              };
+
+              {
+                // 声轨3 (为了性能，这里不实时计算，只取第1个样本帧计算一次)
+                let input = evt.inputBuffer.getChannelData(2);
+                SL.value = getDbFromFloat(input[0]);
+              };
+
+              {
+                // 声轨4 (为了性能，这里不实时计算，只取中间的计算一次)
+                let input = evt.inputBuffer.getChannelData(3);
+                SR.value = getDbFromFloat(input[input.length / 2]);
+              };
+
+            };
+          } else {
+            audio.play();
+          };
+        }, false);
+
+        // 监听音频播放时，激活当前播放
+        audio.addEventListener('play', () => {
+          ac.resume();
+        }, false);
+
+        // 监听音频暂停时，挂起当前播放
+        audio.addEventListener('pause', () => {
+          ac.suspend();
+        }, false);
+
+      </script>
+</body>
+
 </html>

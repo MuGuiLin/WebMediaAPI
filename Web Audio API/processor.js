@@ -31,6 +31,7 @@ function peakValues(input) {
 
 class RandomNoiseProcessor extends AudioWorkletProcessor {
     process(inputs, outputs, parameters) {
+        console.log(inputs[0], 99999999)
         this.port.postMessage({ type: 'peaks', input: peakValues(inputs[0]) });
         return true;
     }
