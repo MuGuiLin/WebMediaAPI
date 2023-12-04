@@ -100,10 +100,13 @@
           }
         });
 
-        // 计算音频跳表数据
-        const getDbFromFloat = (float) => {
-          const log = (Math.log(10) / Math.log(float)) * 20;
-          return isNaN(log) ? -10.52 : log;
+        function getBaseLog(x, y) {
+          return Math.log(y) / Math.log(x);
+        };
+
+        // 计算音频Peak Level
+        function countPeakLevel(float) {
+          return getBaseLog(10, float) * 20;
         };
 
         // const audio = document.querySelector("audio");
@@ -144,37 +147,40 @@
               // evt.outputBuffer.getChannelData(0);
 
               {
-                // 声轨1
+                // 声轨1 遍历样本帧数组，性能差，但峰值电平跳表更准确
                 let input = evt.inputBuffer.getChannelData(0),
                   len = input.length,
                   i = 0;
                 while (i < len) {
-                  L.value = getDbFromFloat(input[i++]);
-                  TBLV.innerText = '峰值电平：' + L.value.toFixed(2);
+                  const level = countPeakLevel(input[i++]);
+                  if (level) {
+                    L.value = level;
+                    TBLV.innerText = '峰值电平：' + L.value.toFixed(2);
+                  }
                 }
               };
 
               {
-                // 声轨2
-                let input = evt.inputBuffer.getChannelData(1),
-                  len = input.length,
-                  i = 0;
-                while (i < len) {
-                  R.value = getDbFromFloat(input[i++]);
-                  TBRV.innerText = '峰值电平：' + R.value.toFixed(2);
-                }
+                // 声轨2 (为了性能，这里不实时计算，只取样本帧数组最大的值)，推荐
+                const input = evt.inputBuffer.getChannelData(1);
+                R.value = countPeakLevel(Math.max(...input));
+                TBRV.innerText = '峰值电平：' + R.value.toFixed(2);
               };
 
               {
                 // 声轨3 (为了性能，这里不实时计算，只取第1个样本帧计算一次)
-                let input = evt.inputBuffer.getChannelData(2);
-                SL.value = getDbFromFloat(input[0]);
+                const input = evt.inputBuffer.getChannelData(2);
+                if (input[0]) {
+                  SL.value = countPeakLevel(input[0]);
+                }
               };
 
               {
                 // 声轨4 (为了性能，这里不实时计算，只取中间的计算一次)
-                let input = evt.inputBuffer.getChannelData(3);
-                SR.value = getDbFromFloat(input[input.length / 2]);
+                const input = evt.inputBuffer.getChannelData(3);
+                if (input[input.length / 2]) {
+                  SR.value = countPeakLevel(input[input.length / 2]);
+                }
               };
 
             };

@@ -70,11 +70,15 @@
       document.onclick = function () {
         if (isInit) {
           isInit = false;
-          factory((floatVal) => (Math.log(10) / Math.log(floatVal)) * 20);
+          function getBaseLog(x, y) {
+            return Math.log(y) / Math.log(x);
+          };
+          // 计算音频Peak Level
+          factory((float) => getBaseLog(10, float) * 20);
           document.onclick = null;
         }
       };
-    })(globalThis, function (getDbFromFloatLog) {
+    })(globalThis, function (countPeakLevel) {
       const ac = new (window.AudioContext || window.webkitAudioContext)();
       const audio = document.querySelector("video");
       audio.crossOrigin = "anonymous"; // cross-origin - if file is stored on remote server 跨原点-如果文件存储在远程服务器上
@@ -134,10 +138,10 @@
             len = input.length,
             i = 0;
           while (i < len) {
-            L.value = getDbFromFloatLog(input[i++]);
+            L.value = countPeakLevel(input[i++]);
           }
           // let input = evt.inputBuffer.getChannelData(0);
-          // L.value = getDbFromFloatLog(input[0]);
+          // L.value = countPeakLevel(input[0]);
 
         }
 

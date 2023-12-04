@@ -149,9 +149,13 @@
           }
         });
 
-        // 计算音频跳表数据
-        const getDbFromFloat = (float) => {
-          return (Math.log(10) / Math.log(float)) * 20;
+        function getBaseLog(x, y) {
+          return Math.log(y) / Math.log(x);
+        };
+
+        // 计算音频Peak Level
+        function countPeakLevel(float) {
+          return getBaseLog(10, float) * 20;
         };
 
         // const audio = document.querySelector("audio");
@@ -225,21 +229,21 @@
 
                 // 声轨1
                 if (volumeNodeL.gain.value) {
-                  L.value = getDbFromFloat(input[0]);
+                  L.value = countPeakLevel(input[0]);
                   TBLV.innerText = '峰值电平：' + L.value.toFixed(2);
                 }
                 // 声轨2
                 if (volumeNodeR.gain.value) {
-                  R.value = getDbFromFloat(input[1]);
+                  R.value = countPeakLevel(input[1]);
                   TBRV.innerText = '峰值电平：' + R.value.toFixed(2);
                 }
                 // 声轨3
                 if (volumeNodeSL.gain.value) {
-                  SL.value = getDbFromFloat(input[2]);
+                  SL.value = countPeakLevel(input[2]);
                 }
                 // 声轨4
                 if (volumeNodeSR.gain.value) {
-                  SR.value = getDbFromFloat(input[3]);
+                  SR.value = countPeakLevel(input[3]);
                 }
 
               }
