@@ -229,21 +229,33 @@
 
                 // 声轨1
                 if (volumeNodeL.gain.value) {
-                  L.value = countPeakLevel(input[0]);
-                  TBLV.innerText = '峰值电平：' + L.value.toFixed(2);
+                  const level = countPeakLevel(input[0]);
+                  if (level) {
+                    L.value = level;
+                    TBLV.innerText = '峰值电平：' + L.value.toFixed(2);
+                  }
                 }
                 // 声轨2
                 if (volumeNodeR.gain.value) {
-                  R.value = countPeakLevel(input[1]);
-                  TBRV.innerText = '峰值电平：' + R.value.toFixed(2);
+                  const level = countPeakLevel(input[1]);
+                  if (level) {
+                    R.value = level;
+                    TBRV.innerText = '峰值电平：' + R.value.toFixed(2);
+                  }
                 }
                 // 声轨3
                 if (volumeNodeSL.gain.value) {
-                  SL.value = countPeakLevel(input[2]);
+                  const level = countPeakLevel(input[2]);
+                  if (level) {
+                    SL.value = level;
+                  }
                 }
                 // 声轨4
                 if (volumeNodeSR.gain.value) {
-                  SR.value = countPeakLevel(input[3]);
+                  const level = countPeakLevel(input[3]);
+                  if (level) {
+                    SR.value = level;
+                  }
                 }
 
               }
