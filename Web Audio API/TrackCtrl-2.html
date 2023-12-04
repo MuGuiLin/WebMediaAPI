@@ -9,15 +9,55 @@
   <title>Web Audio API examples: MediaElementAudioSource()</title>
   <style>
     body {
-      padding: 100px;
+      padding: 50px;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    section {
+      margin: 100px auto;
+      width: 1200px;
     }
 
     audio,
     input[type="file"] {
-      width: 671px;
+      width: 471px;
     }
 
-    input[type="range"] {
+    label {
+      position: relative;
+    }
+
+    .VL,
+    .VR,
+    #VLV,
+    #TBLV {
+      position: absolute;
+      top: 30px;
+      left: 0;
+      width: 100px;
+    }
+
+    .VR {
+      left: auto;
+      right: 0;
+    }
+
+    #VLV {
+      top: 50px;
+      left: 20px;
+    }
+
+    #TBLV {
+      left: auto;
+      top: 80px;
+      right: 10px;
+    }
+
+    meter {
+      width: 128px;
       transform: rotate(-90deg);
     }
 
@@ -36,130 +76,193 @@
     128个声音对象)编码技术】
   </h3>
 
-  <br />
-  <br />
+  <section>
+    <label>
+      <button type="button" id="LBTN">左声道（L）</button>
+      <input type="range" id="VL" min="0" max="10" step="0.1" class="VL" value="1" />
+      <span id="VLV">音量：1</span>
+      <meter id="L" min="-60" low="-10" high="-3" max="3" value="-60" style="margin-left: 13px"></meter>
+      <span id="TBLV">响度：-60</span>
+    </label>
+    添加本地视音频：<input id="file" type="file" accept="video/*,audio/*" />
 
-  <button type="button" id="LBTN">左声道（L）</button>
-  <input type="range" id="L" min="0" max="100" style="margin-left: 13px" />
+    <label>
+      <meter id="R" min="-60" low="-10" high="-3" max="3" value="-60"></meter>
+      <button type="button" id="RBTN">右声道（R）</button>
+      <input type="range" id="VR" min="0" max="10" step="0.1" class="VR" value="1" />
+    </label>
 
-  添加本地音视频：<input id="file" type="file" />
+    <br /><br />
 
-  <input type="range" id="R" min="0" max="100" />
-  <button type="button" id="RBTN">右声道（R）</button>
+    <div class="box">
+      <button type="button" id="SLBTN">左环绕（SL）</button>
+      <meter id="SL" min="-60" low="-10" high="-3" max="3" value="-60"></meter>
 
-  <br /><br /><br />
-  <br /><br /><br />
+      <!--<audio  controls loop width="600">
+          <source src="./media/xxx.mp3" type="audio/mp3" />
+        </audio>-->
+      <video controls width="600">
+        <source src="./media/Project DT-5.1.mp4" type="video/mp4" />
+      </video>
 
-  <div>
-    <button type="button" id="SLBTN">左环绕（SL）</button>
-    <input type="range" id="SL" min="0" max="100" />
+      <meter id="SR" min="-60" low="-10" high="-3" max="3" value="-60"></meter>
+      <button type="button" id="SRBTN">右环绕（SR）</button>
+    </div>
+    <section>
 
-    <video mute loop controls width="800">
-      <source src="./media/Project DT-5.1.mp4" type="video/mp4" />
-      <p>This demo needs a browser supporting the &lt;video&gt; element.</p>
-    </video>
+      <script>
+        // 获取本地视音频
+        file.addEventListener("change", function () {
+          const file = this.files[0];
+          console.log(file);
+          if ("video/mp4".startsWith("video")) {
+            // video.src = window.URL.createObjectURL(file);
+            audio.src = window.URL.createObjectURL(file);
+          } else {
+            audio.src = window.URL.createObjectURL(file);
+          }
+        });
 
-    <input type="range" id="SR" min="0" max="100" />
-    <button type="button" id="SRBTN">右环绕（SR）</button>
-  </div>
-
-  <script>
-    (function (global, factory) {
-      "use strict";
-      let isInit = true;
-      document.onclick = function () {
-        if (isInit) {
-          isInit = false;
-          factory(global);
-          document.onclick = null;
-        }
-      };
-    })(globalThis, async function () {
-      const ac = new (window.AudioContext || window.webkitAudioContext)();
-      const audio = document.querySelector("video");
-      audio.crossOrigin = "anonymous"; // cross-origin - if file is stored on remote server 跨原点-如果文件存储在远程服务器上
-
-
-      const audioSource = ac.createMediaElementSource(audio);
-       const channelCount = 4 ||audioSource.channelCount; 
-
-      await ac.audioWorklet.addModule("processor.js");
-      const randomNoiseNode = new AudioWorkletNode(
-        ac,
-        "random-noise-processor"
-      );
-
-      // 通道分配器
-      const splitterNode = new ChannelSplitterNode(ac, {
-        numberOfOutputs: channelCount,
-      });
-
-      // 通道合并器
-      const mergerNode = new ChannelMergerNode(ac, {
-        numberOfInputs: channelCount,
-      });
-
-      const volumeNodeL = new GainNode(ac, { gain: 2 });
-      const volumeNodeR = new GainNode(ac, { gain: 2 });
-      const volumeNodeSL = new GainNode(ac, { gain: 2 });
-      const volumeNodeSR = new GainNode(ac, { gain: 2 });
-
-      audioSource.connect(splitterNode);
-
-      splitterNode.connect(volumeNodeL, 0); // connect OUTPUT channel 0
-      splitterNode.connect(volumeNodeR, 1); // connect OUTPUT channel 1
-      splitterNode.connect(volumeNodeSL, 2); // connect OUTPUT channel 2
-      splitterNode.connect(volumeNodeSR, 3); // connect OUTPUT channel 3
-
-      volumeNodeL.connect(mergerNode, 0, 0); // connect INPUT channel 0
-      volumeNodeR.connect(mergerNode, 0, 1); // connect INPUT channel 1
-      volumeNodeSL.connect(mergerNode, 0, 2); // connect INPUT channel 2
-      volumeNodeSR.connect(mergerNode, 0, 3); // connect INPUT channel 3
-
-      mergerNode.connect(ac.destination).connect(ac.destination);
-
-      audioSource.connect(randomNoiseNode)
-
-
-      audio.addEventListener('play', () => {
-        // randomNoiseNode.connect(ac.destination);
-        console.log(randomNoiseNode, 666666)
-      })
-
-
-        LBTN.onclick = function () {
-          volumeNodeL.gain.value = Number(!volumeNodeL.gain.value);
-          console.log(volumeNodeL.gain.value);
+        // 计算音频跳表数据
+        const getDbFromFloat = (floatVal) => {
+          const log = (Math.log(10) / Math.log(floatVal)) * 20;
+          return isNaN(log) ? -10.52 : log;
         };
 
-        RBTN.onclick = function () {
-          volumeNodeR.gain.value = Number(!volumeNodeR.gain.value);
-          console.log(volumeNodeR.gain.value);
-        };
+        const audio = document.querySelector("video");
+        let ac = null;
 
-        SLBTN.onclick = function () {
-          volumeNodeSL.gain.value = Number(!volumeNodeSL.gain.value);
-          console.log(volumeNodeSL.gain.value);
-        };
+        // 音频元数据加载后执行
+        audio.addEventListener("loadedmetadata", async () => {
+          if (!ac) {
+            // 上下文对象 由于浏览器安全策略要求音频上下文必须在用户事件（单击、键盘按键等）中启用。这意味着，如果您尝试在没有用户事件的情况下自动播放音乐，所以在loadedmetadata元数据已加载时再执行！！
+            ac = new (window.AudioContext || window.webkitAudioContext)();
 
-        SRBTN.onclick = function () {
-          volumeNodeSR.gain.value = Number(!volumeNodeSR.gain.value);
-          console.log(volumeNodeSR.gain.value);
-        };
-      }
+            // 创建并获取输入源
+            const audioSource = ac.createMediaElementSource(audio);
+            // 缓冲区大小 取值为 2 的幂次方的一个常数
+            const bufferSize = 2048;
+            // 音频通道数 默认值是 2，最高能取 32
+            const channelCount = 4 || audioSource.channelCount;
 
-      file.addEventListener("change", function () {
-        const file = this.files[0];
-        console.log(file);
-        if ("video/mp4".startsWith("video")) {
-          // video.src = window.URL.createObjectURL(file);
-          audio.src = window.URL.createObjectURL(file);
-        } else {
-          audio.src = window.URL.createObjectURL(file);
-        }
-      });
-    });
-  </script>
+            // 创建音频处理器
+            await ac.audioWorklet.addModule('./processor.js')
+            const processor = new AudioWorkletNode(ac, 'mu-processor', {
+              bufferSize,
+              channelCount,
+              parameterData: {},
+            });
+            // 链接音频处理器
+            audioSource.connect(processor).connect(ac.destination);
+
+            // 创建通道控制器
+            const volumeNodeL = new GainNode(ac, { gain: 1 });
+            const volumeNodeR = new GainNode(ac, { gain: 1 });
+            const volumeNodeSL = new GainNode(ac, { gain: 1 });
+            const volumeNodeSR = new GainNode(ac, { gain: 1 });
+
+            // 创建通道分配器
+            const splitterNode = new ChannelSplitterNode(ac, {
+              numberOfOutputs: channelCount,
+            });
+
+            splitterNode.connect(volumeNodeL, 0);
+            splitterNode.connect(volumeNodeR, 1);
+            splitterNode.connect(volumeNodeSL, 2);
+            splitterNode.connect(volumeNodeSR, 3);
+
+            // 控制链接到输入源
+            audioSource.connect(splitterNode);
+
+            // 创建通道合并器
+            const mergerNode = new ChannelMergerNode(ac, {
+              numberOfInputs: channelCount,
+            });
+
+            volumeNodeL.connect(mergerNode, 0, 0);
+            volumeNodeR.connect(mergerNode, 0, 1);
+            volumeNodeSL.connect(mergerNode, 0, 2);
+            volumeNodeSR.connect(mergerNode, 0, 3);
+
+            // 通道链接到扬声器
+            mergerNode.connect(ac.destination);
+
+            audio.play();
+
+            // 监听音频处理器每次处理的样本帧
+            processor.port.onmessage = (evt) => {
+              console.log(evt.data);
+              if ('peaks' === evt.data.type) {
+                const { input } = evt.data;
+
+                // 声轨1
+                if (volumeNodeL.gain.value) {
+                  L.value = getDbFromFloat(input[0]);
+                  TBLV.innerText = '响度：' + L.value.toFixed(2);
+                }
+                // 声轨2
+                if (volumeNodeR.gain.value) {
+                  R.value = getDbFromFloat(input[1]);
+                }
+                // 声轨3
+                if (volumeNodeSL.gain.value) {
+                  SL.value = getDbFromFloat(input[2]);
+                }
+                // 声轨4
+                if (volumeNodeSR.gain.value) {
+                  SR.value = getDbFromFloat(input[3]);
+                }
+
+              }
+            };
+
+            // 静音左L声道
+            LBTN.onclick = function () {
+              volumeNodeL.gain.value = Number(!volumeNodeL.gain.value);
+            };
+
+            // 左L声道音量大小控制
+            VL.oninput = function () {
+              // volumeNodeL.gain.value = this.value;
+              volumeNodeL.gain.setValueAtTime(this.value, ac.currentTime);
+              VLV.innerText = '音量：' + this.value;
+            };
+
+            // 静音右R声道
+            RBTN.onclick = function () {
+              volumeNodeR.gain.value = Number(!volumeNodeR.gain.value);
+            };
+
+            // 右R声道音量大小控制
+            VR.oninput = function () {
+              volumeNodeR.gain.setValueAtTime(this.value, ac.currentTime);
+            };
+
+            // 静音左环绕SL声道
+            SLBTN.onclick = function () {
+              volumeNodeSL.gain.value = Number(!volumeNodeSL.gain.value);
+            };
+
+            // 静音右环绕SR声道
+            SRBTN.onclick = function () {
+              volumeNodeSR.gain.value = Number(!volumeNodeSR.gain.value);
+            };
+          } else {
+            audio.play();
+          };
+        }, false);
+
+        // 监听音频播放时，激活当前播放
+        audio.addEventListener('play', () => {
+          ac.resume();
+        }, false);
+
+        // 监听音频暂停时，挂起当前播放
+        audio.addEventListener('pause', () => {
+          ac.suspend();
+        }, false);
+
+      </script>
 </body>
 
 </html>
