@@ -60,20 +60,20 @@
   <section>
     <label>
       <button type="button" id="LBTN">左声道（L）</button>
-      <meter id="L" min="-60" low="-10" high="-3" max="3" value="-60" style="margin-left: 13px"></meter>
-      <span id="TBLV">响度：-60</span>
+      <meter id="L" min="-60" low="-20" high="-6" max="3" value="-60" style="margin-left: 13px"></meter>
+      <span id="TBLV">峰值电平：-60</span>
     </label>
     添加本地视音频：<input id="file" type="file" accept="video/*,audio/*" />
     <label>
-      <meter id="R" min="-60" low="-10" high="-3" max="3" value="-60"></meter>
-      <span id="TBRV">响度：-60</span>
+      <meter id="R" min="-60" low="-20" high="-6" max="3" value="-60"></meter>
+      <span id="TBRV">峰值电平：-60</span>
       <button type="button" id="RBTN">右声道（R）</button>
     </label>
     <br /><br />
 
     <div class="box">
       <button type="button" id="SLBTN">左环绕（SL）</button>
-      <meter id="SL" min="-60" low="-10" high="-3" max="3" value="-60"></meter>
+      <meter id="SL" min="-60" low="-20" high="-6" max="3" value="-60"></meter>
 
       <!--<audio  controls loop width="600">
           <source src="./media/xxx.mp3" type="audio/mp3" />
@@ -82,7 +82,7 @@
         <source src="./media/Project DT-5.1.mp4" type="video/mp4" />
       </video>
 
-      <meter id="SR" min="-60" low="-10" high="-3" max="3" value="-60"></meter>
+      <meter id="SR" min="-60" low="-20" high="-6" max="3" value="-60"></meter>
       <button type="button" id="SRBTN">右环绕（SR）</button>
     </div>
     <section>
@@ -150,7 +150,7 @@
                   i = 0;
                 while (i < len) {
                   L.value = getDbFromFloat(input[i++]);
-                  TBLV.innerText = '响度：' + L.value.toFixed(2);
+                  TBLV.innerText = '峰值电平：' + L.value.toFixed(2);
                 }
               };
 
@@ -161,7 +161,7 @@
                   i = 0;
                 while (i < len) {
                   R.value = getDbFromFloat(input[i++]);
-                  TBRV.innerText = '响度：' + R.value.toFixed(2);
+                  TBRV.innerText = '峰值电平：' + R.value.toFixed(2);
                 }
               };
 
