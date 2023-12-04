@@ -140,10 +140,11 @@
           while (i < len) {
             L.value = countPeakLevel(input[i++]);
           }
-          // let input = evt.inputBuffer.getChannelData(0);
-          // L.value = countPeakLevel(input[0]);
 
-        }
+          // L.value = countPeakLevel(input[0]);
+          // L.value = countPeakLevel(Math.max(...input));
+
+        };
 
         {
           let input = evt.inputBuffer.getChannelData(1),
@@ -158,7 +159,7 @@
           if (volumeNodeR.gain.value) {
             R.value = rms * 200;
           }
-        }
+        };
 
         {
           let input = evt.inputBuffer.getChannelData(2),
@@ -173,7 +174,7 @@
           if (volumeNodeSL.gain.value) {
             SL.value = rms * 200;
           }
-        }
+        };
 
         {
           let input = evt.inputBuffer.getChannelData(3),
@@ -188,7 +189,7 @@
           if (volumeNodeSR.gain.value) {
             SR.value = rms * 200;
           }
-        }
+        };
       };
 
       /*
