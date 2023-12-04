@@ -1,159 +1,162 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script async src="//hm.baidu.com/hm.js?f79493fc378b2235419a88daa91d5f6d"></script>
-    <title>Web媒体流</title>
-    <style>
-      body {
-        padding: 100px;
-      }
-      video {
-        width: 50%;
-        height: 50%;
-        margin: 50px auto;
-        background-color: rgba(255, 232, 198, 0.53);
-        display: block;
-      }
-    </style>
-  </head>
 
-  <body>
-    <h1>Web媒体流</h1>
-    <hr />
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script async src="//hm.baidu.com/hm.js?f79493fc378b2235419a88daa91d5f6d"></script>
+  <title>Web媒体流</title>
+  <style>
+    body {
+      padding: 100px;
+    }
 
-    <input type="file" multiple accept="" />
-    <div>
-      <video id="video"></video>
-    </div>
+    video {
+      width: 50%;
+      height: 50%;
+      margin: 50px auto;
+      background-color: rgba(255, 232, 198, 0.53);
+      display: block;
+    }
+  </style>
+</head>
 
-    <button onclick="openCamera()">打开Camera</button>
-    <button onclick="stopRecording()">停止recording</button>
-    <button onclick="saveRecording()">保存recording</button>
+<body>
+  <h1>Web媒体流</h1>
+  <hr />
 
-    <hr />
-    <div>
-      <h5>预览区域</h5>
-      <div id="videoWrap">暂无视频</div>
-      <p>点击视频即可下载<b id="batchDownloadVideos">批量下载</b></p>
-    </div>
+  <input type="file" multiple accept="" />
+  <div>
+    <video id="video"></video>
+  </div>
 
-    <script>
-      // https://blog.csdn.net/weixin_41960204/article/details/110857225
+  <button onclick="openCamera()">打开Camera</button>
+  <button onclick="stopRecording()">停止recording</button>
+  <button onclick="saveRecording()">保存recording</button>
 
-      const videoWrap = document.getElementById("videoWrap"); // 视频预览
-      const video = document.getElementById("video");
+  <hr />
+  <div>
+    <h5>预览区域</h5>
+    <div id="videoWrap">暂无视频</div>
+    <p>点击视频即可下载<b id="batchDownloadVideos">批量下载</b></p>
+  </div>
 
-      const setting = {
-        audio: {
-          sampleRate: "32000HZ",
-          sampleSize: 16,
-          volume: 0.3,
-          echoCancellation: true,
-          autoGainControl: false,
-          noiseSuppression: true,
-          latency: 3,
-          channelCount: 2,
+  <script>
+    // https://blog.csdn.net/weixin_41960204/article/details/110857225
+
+    const videoWrap = document.getElementById("videoWrap"); // 视频预览
+    const video = document.getElementById("video");
+
+    const setting = {
+      audio: {
+        sampleRate: "32000HZ",
+        sampleSize: 16,
+        volume: 0.3,
+        echoCancellation: true,
+        autoGainControl: false,
+        noiseSuppression: true,
+        latency: 3,
+        channelCount: 2,
+      },
+      // audio:true,
+      video: {
+        facingMode: "user", // 'user'前置摄像头 ‘environment’代表后置摄像头。笔记本只有前置，这个不确定行不行
+        width: 400,
+        height: 250,
+        noiseSuppression: true,
+        frameRate: {
+          ideal: 10,
+          max: 15,
         },
-        // audio:true,
-        video: {
-          facingMode: "user", // 'user'前置摄像头 ‘environment’代表后置摄像头。笔记本只有前置，这个不确定行不行
-          width: 400,
-          height: 250,
-          noiseSuppression: true,
-          frameRate: {
-            ideal: 10,
-            max: 15,
-          },
-        },
+      },
+    };
+
+    function success(stream) {
+      video.srcObject = stream;
+      video.play(); // 播放
+      startRecording(stream); // 录屏
+    }
+
+    function error(error) {
+      console.log(`访问用户媒体设备失败：${error.name}, ${error.message}`);
+      alert(`访问用户媒体设备失败：${error.name}, ${error.message}`);
+    }
+
+    function openCamera() {
+      if (navigator.mediaDevices) {
+        navigator.mediaDevices
+          .getUserMedia(setting)
+          .then(success)
+          .catch(error);
+      } else if (navigator.webkitGetUserMedia) {
+        //webkit核心浏览器
+        navigator.webkitGetUserMedia(
+          { video: { width: 1000, height: 1000 }, audio: true },
+          success,
+          error
+        );
+      } else if (navigator.mozGetUserMedia) {
+        //firfox浏览器
+        navigator.mozGetUserMedia(
+          { video: { width: 1000, height: 1000 }, audio: true },
+          success,
+          error
+        );
+      } else if (navigator.getUserMedia) {
+        //旧版API
+        navigator.getUserMedia(
+          { video: { width: 1000, height: 1000 }, audio: true },
+          success,
+          error
+        );
+      }
+    }
+
+    let chunks = [];
+    let mediaRecorder = {};
+
+    function startRecording(stream) {
+      alert("录制视频");
+      mediaRecorder = new MediaRecorder(stream);
+
+      //为了收集录制的数据，需要监听 ondataavailable 事件
+      chunks = [];
+      mediaRecorder.ondataavailable = function (e) {
+        console.log(e.data);
+        // chunks.push(e.data)
+        chunks = e.data;
       };
+      // 开始录制
+      mediaRecorder.start();
+      console.log("媒体流的状态： " + mediaRecorder.state);
+    }
 
-      function success(stream) {
-        video.srcObject = stream;
-        video.play(); // 播放
-        startRecording(stream); // 录屏
+    function stopRecording() {
+      mediaRecorder.stop();
+    }
+
+    function creatFileObj(blob, fileName) {
+      var file = new File([blob], fileName); // 将 blob 转为 file 对象，
+      for (var key in file) {
+        console.log(key + " ===> " + file[key]);
       }
+    }
 
-      function error(error) {
-        console.log(`访问用户媒体设备失败：${error.name}, ${error.message}`);
-        alert(`访问用户媒体设备失败：${error.name}, ${error.message}`);
-      }
+    function saveRecording() {
+      const videoDom = document.createElement("video");
+      videoDom.width = video.width / 3;
+      videoDom.height = video.height / 3;
+      videoDom.controls = true;
 
-      function openCamera() {
-        if (navigator.mediaDevices) {
-          navigator.mediaDevices
-            .getUserMedia(setting)
-            .then(success)
-            .catch(error);
-        } else if (navigator.webkitGetUserMedia) {
-          //webkit核心浏览器
-          navigator.webkitGetUserMedia(
-            { video: { width: 1000, height: 1000 }, audio: true },
-            success,
-            error
-          );
-        } else if (navigator.mozGetUserMedia) {
-          //firfox浏览器
-          navigator.mozGetUserMedia(
-            { video: { width: 1000, height: 1000 }, audio: true },
-            success,
-            error
-          );
-        } else if (navigator.getUserMedia) {
-          //旧版API
-          navigator.getUserMedia(
-            { video: { width: 1000, height: 1000 }, audio: true },
-            success,
-            error
-          );
-        }
-      }
+      // chunk 为Blob对象
+      creatFileObj(chunks, "aa.mp4");
+      chunks = "";
+      mediaRecorder = null;
+      videoDom.src = window.URL.createObjectURL(chunks); // 注意这里不要弄到当前实时画面的 video 对象中，因为实时的 video 中是有流的
+      videoWrap.appendChild(videoDom);
+    }
+  </script>
+</body>
 
-      let chunks = [];
-      let mediaRecorder = {};
-      
-      function startRecording(stream) {
-        alert("录制视频");
-        mediaRecorder = new MediaRecorder(stream);
-
-        //为了收集录制的数据，需要监听 ondataavailable 事件
-        chunks = [];
-        mediaRecorder.ondataavailable = function (e) {
-          console.log(e.data);
-          // chunks.push(e.data)
-          chunks = e.data;
-        };
-        // 开始录制
-        mediaRecorder.start();
-        console.log("媒体流的状态： " + mediaRecorder.state);
-      }
-
-      function stopRecording() {
-        mediaRecorder.stop();
-      }
-
-      function creatFileObj(blob, fileName) {
-        var file = new File([blob], fileName); // 将 blob 转为 file 对象，
-        for (var key in file) {
-          console.log(key + " ===> " + file[key]);
-        }
-      }
-
-      function saveRecording() {
-        const videoDom = document.createElement("video");
-        videoDom.width = video.width / 3;
-        videoDom.height = video.height / 3;
-        videoDom.controls = true;
-
-        // chunk 为Blob对象
-        creatFileObj(chunks, "aa.mp4");
-        chunks = "";
-        mediaRecorder = null;
-        videoDom.src = window.URL.createObjectURL(chunks); // 注意这里不要弄到当前实时画面的 video 对象中，因为实时的 video 中是有流的
-        videoWrap.appendChild(videoDom);
-      }
-    </script>
-  </body>
 </html>

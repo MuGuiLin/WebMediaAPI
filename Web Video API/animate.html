@@ -1,217 +1,223 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script async src="//hm.baidu.com/hm.js?f79493fc378b2235419a88daa91d5f6d"></script>
-    <title>视音频波形绘制</title>
-    <style>
-      body {
-        padding: 100px;
-      }
-      progress {
-        width: 1000px;
-      }
-      select {
-        font-size: 16px;
-      }
-      canvas {
-        display: block;
-        border-bottom: 3px solid rgb(255, 0, 255);
-      }
-    </style>
-  </head>
 
-  <body>
-    <h1>
-      AnalyserNode.getByteTimeDomainData(ArrayBuffer) 获取视音频流信息 并绘制波形
-    </h1>
-    <hr />
-    
-    <p>
-      <a href="https://developer.mozilla.org/zh-CN/docs/Web/API/AnalyserNode/getByteTimeDomainData" target="_block">AnalyserNode 接口的 getByteTimeDomainData() 方法复制当前波形或时域数据到传递给它的 Uint8Array (en-US) (无符号字节数组) 中。</a>
-    </p>
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script async src="//hm.baidu.com/hm.js?f79493fc378b2235419a88daa91d5f6d"></script>
+  <title>视音频波形绘制</title>
+  <style>
+    body {
+      padding: 100px;
+    }
 
-    <video id="video" muted autoplay loop controls>
-      <source src="./media/202107.mp4" type="video/mp4" />
-    </video>
+    progress {
+      width: 1000px;
+    }
 
-    <br />
-    <h4>
-      视音频响度监听（静音可自动播放）
-      <button type="button" id="muted">静音 / 取消静音</button>
-    </h4>
-    <progress id="progress" max="300" value="0"></progress>
+    select {
+      font-size: 16px;
+    }
 
-    <br />
-    <h4>
-      视音频波形绘制
-      <select id="select">
-        <option value="frequencyBinCount">frequencyBinCount</option>
-        <option value="fftSize">fftSize</option>
-      </select>
-    </h4>
-    <canvas id="canvas" width="1000"></canvas>
+    canvas {
+      display: block;
+      border-bottom: 3px solid rgb(255, 0, 255);
+    }
+  </style>
+</head>
 
-    <script>
-      const video = document.getElementById("video");
-      // video.muted = true;
-      video.autoplay = true;
-      video.controls = true;
+<body>
+  <h1>
+    AnalyserNode.getByteTimeDomainData(ArrayBuffer) 获取视音频流信息 并绘制波形
+  </h1>
+  <hr />
 
-      const canvas = document.getElementById("canvas");
-      const ctx = canvas.getContext("2d");
+  <p>
+    <a href="https://developer.mozilla.org/zh-CN/docs/Web/API/AnalyserNode/getByteTimeDomainData"
+      target="_block">AnalyserNode 接口的 getByteTimeDomainData() 方法复制当前波形或时域数据到传递给它的 Uint8Array (en-US) (无符号字节数组) 中。</a>
+  </p>
 
-      const ac = new (globalThis.AudioContext ||
-        globalThis.webkitAudioContext)();
-      ac.addEventListener("statechange", function (e) {
-        console.log("当AudioContext的状态发生变化时执行：", ac.state, e);
-      });
+  <video id="video" muted autoplay loop controls>
+    <source src="./media/202107.mp4" type="video/mp4" />
+  </video>
 
-      // 创建音源
-      const source = ac.createMediaElementSource(video);
+  <br />
+  <h4>
+    视音频响度监听（静音可自动播放）
+    <button type="button" id="muted">静音 / 取消静音</button>
+  </h4>
+  <progress id="progress" max="300" value="0"></progress>
 
-      // 创建音量控制节点
-      const gainNode = ac.createGain();
-      gainNode.connect(ac.destination);
+  <br />
+  <h4>
+    视音频波形绘制
+    <select id="select">
+      <option value="frequencyBinCount">frequencyBinCount</option>
+      <option value="fftSize">fftSize</option>
+    </select>
+  </h4>
+  <canvas id="canvas" width="1000"></canvas>
 
-      // 创建音频分析节点
-      const analyser = ac.createAnalyser();
-      source.connect(analyser);
-      analyser.connect(gainNode);
+  <script>
+    const video = document.getElementById("video");
+    // video.muted = true;
+    video.autoplay = true;
+    video.controls = true;
+
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const ac = new (globalThis.AudioContext ||
+      globalThis.webkitAudioContext)();
+    ac.addEventListener("statechange", function (e) {
+      console.log("当AudioContext的状态发生变化时执行：", ac.state, e);
+    });
+
+    // 创建音源
+    const source = ac.createMediaElementSource(video);
+
+    // 创建音量控制节点
+    const gainNode = ac.createGain();
+    gainNode.connect(ac.destination);
+
+    // 创建音频分析节点
+    const analyser = ac.createAnalyser();
+    source.connect(analyser);
+    analyser.connect(gainNode);
 
 
-      // frequencyBinCount 属性是一个无符号长整形 (unsigned long) 的值，值为 fftSize 的一半。这通常等于将要用于可视化的数据值的数量
-      // fftSize 属性的值必须是从 32 到 32768 范围内的 2 的非零幂; 其默认值为 2048.
-      let bufferLength = analyser.frequencyBinCount || analyser.fftSize;
-      console.log("BufferLength：", bufferLength);
+    // frequencyBinCount 属性是一个无符号长整形 (unsigned long) 的值，值为 fftSize 的一半。这通常等于将要用于可视化的数据值的数量
+    // fftSize 属性的值必须是从 32 到 32768 范围内的 2 的非零幂; 其默认值为 2048.
+    let bufferLength = analyser.frequencyBinCount || analyser.fftSize;
+    console.log("BufferLength：", bufferLength);
 
-      let arrayBuffer = new Uint8Array(bufferLength);
-      console.log("ArrayBuffer：", arrayBuffer);
+    let arrayBuffer = new Uint8Array(bufferLength);
+    console.log("ArrayBuffer：", arrayBuffer);
 
-      function random(lower, upper) {
-        return Math.floor(Math.random() * (upper - lower + 1)) + lower;
-      }
+    function random(lower, upper) {
+      return Math.floor(Math.random() * (upper - lower + 1)) + lower;
+    }
 
-      function randomColor() {
-        return (
-          "rgb(" +
-          random(0, 256) +
-          "," +
-          random(0, 256) +
-          "," +
-          random(0, 256) +
-          ")"
-        );
-      }
-
-      // 计算音频响度函数
-      function calculateLevel(array, channel) {
-        let sum = 0.0;
-        for (let i = 0; i < array.length; i++) {
-          sum += array[i];
-        }
-        return (sum / array.length) * channel || 0.0;
-      }
-
-      let timer = null;
-      function animate() {
-        // 获取音频流信息数据
-        analyser.getByteTimeDomainData(arrayBuffer);
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = randomColor();
-
-        // 绘制波形图
-        ctx.beginPath();
-        ctx.lineWidth = 2;
-        let sliceWidth = (canvas.width * 1.0) / bufferLength;
-        let x = 0;
-        for (let i = 0; i < bufferLength; i++) {
-          let v = arrayBuffer[i] / 128.0;
-          let y = (v * canvas.height) / 2;
-          if (i === 0) {
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
-          }
-          x += sliceWidth;
-        }
-
-        ctx.font = "16px Verdana";
-        ctx.fillStyle = "blue";
-        ctx.fillText("bufferLength: " + bufferLength, 10, 20);
-        ctx.lineTo(canvas.width, canvas.height / 2);
-        ctx.stroke();
-
-        progress.value = calculateLevel(arrayBuffer, 1);
-
-        timer = requestAnimationFrame(animate);
-      }
-
-      muted.addEventListener(
-        "click",
-        function () {
-          gainNode.gain.value = Number(!gainNode.gain.value);
-          console.log(gainNode.gain.value)
-        },
-        {
-          once: false, // 只执行一次。
-          passive: true, //承诺此事件监听不会调用 preventDefault，这有助于性能。
-          useCaptureL: false, // 是否捕获（否则冒泡）。
-        }
+    function randomColor() {
+      return (
+        "rgb(" +
+        random(0, 256) +
+        "," +
+        random(0, 256) +
+        "," +
+        random(0, 256) +
+        ")"
       );
+    }
 
-      select.addEventListener("change", function () {
-        if ("fftSize" === this.value) {
-          bufferLength = analyser.fftSize;
+    // 计算音频响度函数
+    function calculateLevel(array, channel) {
+      let sum = 0.0;
+      for (let i = 0; i < array.length; i++) {
+        sum += array[i];
+      }
+      return (sum / array.length) * channel || 0.0;
+    }
+
+    let timer = null;
+    function animate() {
+      // 获取音频流信息数据
+      analyser.getByteTimeDomainData(arrayBuffer);
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = randomColor();
+
+      // 绘制波形图
+      ctx.beginPath();
+      ctx.lineWidth = 2;
+      let sliceWidth = (canvas.width * 1.0) / bufferLength;
+      let x = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        let v = arrayBuffer[i] / 128.0;
+        let y = (v * canvas.height) / 2;
+        if (i === 0) {
+          ctx.moveTo(x, y);
         } else {
-          bufferLength = analyser.frequencyBinCount;
+          ctx.lineTo(x, y);
         }
-        arrayBuffer = new Uint8Array(bufferLength);
+        x += sliceWidth;
+      }
+
+      ctx.font = "16px Verdana";
+      ctx.fillStyle = "blue";
+      ctx.fillText("bufferLength: " + bufferLength, 10, 20);
+      ctx.lineTo(canvas.width, canvas.height / 2);
+      ctx.stroke();
+
+      progress.value = calculateLevel(arrayBuffer, 1);
+
+      timer = requestAnimationFrame(animate);
+    }
+
+    muted.addEventListener(
+      "click",
+      function () {
+        gainNode.gain.value = Number(!gainNode.gain.value);
+        console.log(gainNode.gain.value)
+      },
+      {
+        once: false, // 只执行一次。
+        passive: true, //承诺此事件监听不会调用 preventDefault，这有助于性能。
+        useCaptureL: false, // 是否捕获（否则冒泡）。
+      }
+    );
+
+    select.addEventListener("change", function () {
+      if ("fftSize" === this.value) {
+        bufferLength = analyser.fftSize;
+      } else {
+        bufferLength = analyser.frequencyBinCount;
+      }
+      arrayBuffer = new Uint8Array(bufferLength);
+    });
+
+    // play || playing
+    video.addEventListener("play", function () {
+      animate();
+    });
+
+    video.addEventListener("pause", function () {
+      cancelAnimationFrame(timer);
+    });
+
+    video.addEventListener("ended", function () {
+      cancelAnimationFrame(timer);
+    });
+
+    video.addEventListener("volumechange", function (e) {
+      console.log("音量大小有变化：", e);
+    });
+
+    // 监听视频加载完成事件
+    video.addEventListener("loadedmetadata", function () {
+      video.muted = true;
+      video.play();
+
+      // 监听播放器状态变化事件
+      this.addEventListener("change", function () {
+        // 获取音频轨道数据
+        var audioTracks = this.audioTracks();
+        console.log("audioTracks()获取音频轨道数据：", audioTracks);
+
+        // 获取第一个音频轨道的数据
+        var track = audioTracks[0];
+        console.log("音频轨道1：", track);
+
+        // 输出音频轨道的轨道号、语言和音量信息
+        console.log("轨道数：", audioTracks.length);
+        console.log("轨道号：", track.id);
+        console.log("语言：", track.language);
+        console.log("音量：", track.volume);
       });
+    });
+  </script>
+</body>
 
-      // play || playing
-      video.addEventListener("play", function () {
-        animate();
-      });
-
-      video.addEventListener("pause", function () {
-        cancelAnimationFrame(timer);
-      });
-
-      video.addEventListener("ended", function () {
-        cancelAnimationFrame(timer);
-      });
-
-      video.addEventListener("volumechange", function (e) {
-        console.log("音量大小有变化：", e);
-      });
-
-      // 监听视频加载完成事件
-      video.addEventListener("loadedmetadata", function () {
-        video.muted = true;
-        video.play();
-
-        // 监听播放器状态变化事件
-        this.addEventListener("change", function () {
-          // 获取音频轨道数据
-          var audioTracks = this.audioTracks();
-          console.log("audioTracks()获取音频轨道数据：", audioTracks);
-
-          // 获取第一个音频轨道的数据
-          var track = audioTracks[0];
-          console.log("音频轨道1：", track);
-
-          // 输出音频轨道的轨道号、语言和音量信息
-          console.log("轨道数：", audioTracks.length);
-          console.log("轨道号：", track.id);
-          console.log("语言：", track.language);
-          console.log("音量：", track.volume);
-        });
-      });
-    </script>
-  </body>
 </html>

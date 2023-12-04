@@ -1,129 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script async src="//hm.baidu.com/hm.js?f79493fc378b2235419a88daa91d5f6d"></script>
-    <title>decodeAudioData()</title>
-    <style>
-      :root {
-        --code-background-inline: #666;
-      }
-      body {
-        padding: 100px;
-      }
-      div {
-        margin-bottom: 20px;
-      }
-      code {
-        padding: 0.125rem 0.25rem;
-        width: -webkit-fit-content;
-        width: -moz-fit-content;
-        width: fit-content;
-        font-size: 16px;
-        color: white;
-        background: var(--code-background-inline);
-      }
-      input[type="range"] {
-        transform: rotate(-90deg);
-      }
-      progress {
-        margin-top: 60px;
-        width: 100%;
-      }
-      #progress-bar {
-        width: 100%;
-        height: 10px;
-        border-radius: 5px;
-        background-color: #eee;
-        border: 1px solid gray;
-        cursor: pointer;
-        overflow: hidden;
-      }
 
-      #myProgress {
-        width: 0%;
-        height: inherit;
-        border-radius: 10px;
-        background-color: #00a0e9;
-        background-image: linear-gradient(
-          -45deg,
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script async src="//hm.baidu.com/hm.js?f79493fc378b2235419a88daa91d5f6d"></script>
+  <title>decodeAudioData()</title>
+  <style>
+    :root {
+      --code-background-inline: #666;
+    }
+
+    body {
+      padding: 100px;
+    }
+
+    div {
+      margin-bottom: 20px;
+    }
+
+    code {
+      padding: 0.125rem 0.25rem;
+      width: -webkit-fit-content;
+      width: -moz-fit-content;
+      width: fit-content;
+      font-size: 16px;
+      color: white;
+      background: var(--code-background-inline);
+    }
+
+    input[type="range"] {
+      transform: rotate(-90deg);
+    }
+
+    progress {
+      margin-top: 60px;
+      width: 100%;
+    }
+
+    #progress-bar {
+      width: 100%;
+      height: 10px;
+      border-radius: 5px;
+      background-color: #eee;
+      border: 1px solid gray;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    #myProgress {
+      width: 0%;
+      height: inherit;
+      border-radius: 10px;
+      background-color: #00a0e9;
+      background-image: linear-gradient(-45deg,
           rgba(255, 255, 255, 0.15) 25%,
           transparent 25%,
           transparent 50%,
           rgba(255, 255, 255, 0.15) 50%,
           rgba(255, 255, 255, 0.15) 75%,
           transparent 75%,
-          transparent
-        );
-        background-size: 10px;
-        animation: 1s linear infinite progress-bar-stripes;
+          transparent);
+      background-size: 10px;
+      animation: 1s linear infinite progress-bar-stripes;
+    }
+
+    @keyframes progress-bar-stripes {
+      0% {
+        background-position-x: -10px;
       }
-      @keyframes progress-bar-stripes {
-        0% {
-          background-position-x: -10px;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <h1>
-      通过ac.decodeAudioData()方法 将ArrayBuffer对象 异步解码为 AudioBuffer对象
-    </h1>
-    <hr />
+    }
+  </style>
+</head>
+
+<body>
+  <h1>
+    通过ac.decodeAudioData()方法 将ArrayBuffer对象 异步解码为 AudioBuffer对象
+  </h1>
+  <hr />
+  <p>
+    <a href="https://developer.mozilla.org/zh-CN/docs/Web/API/AudioContext">AudioContext</a>接口的
+    <code>decodeAudioData()</code> 方法可用于异步解码音频文件中的
+    <a
+      href="https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer">ArrayBuffer</a>。<code>ArrayBuffer</code>
+    数据可以通过
+    <a href="https://developer.mozilla.org/zh-CN/docs/Web/API/XMLHttpRequest">XMLHttpRequest</a>
+    和
+    <a href="https://developer.mozilla.org/zh-CN/docs/Web/API/FileReader">FileReader</a>
+    来获取。AudioBuffer 是通过 AudioContext
+    采样率进行解码的，然后通过回调返回结果。
+  </p>
+
+  <h4>本地视音频文件点播</h4>
+  <div>
+    <input type="file" id="file" placeholder="请选择音频文件" />
+    <input type="range" id="L" min="0" max="100" />
+    <button id="start">启动</button>
+    <button id="play">播放 / 暂停</button>
+    <button id="step">停止</button>
+    <input type="range" id="R" min="0" max="100" />
+    <br />
+
     <p>
-      <a href="https://developer.mozilla.org/zh-CN/docs/Web/API/AudioContext"
-        >AudioContext</a
-      >接口的 <code>decodeAudioData()</code> 方法可用于异步解码音频文件中的
-      <a
-        href="https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer"
-        >ArrayBuffer</a
-      >。<code>ArrayBuffer</code> 数据可以通过
-      <a href="https://developer.mozilla.org/zh-CN/docs/Web/API/XMLHttpRequest"
-        >XMLHttpRequest</a
-      >
-      和
-      <a href="https://developer.mozilla.org/zh-CN/docs/Web/API/FileReader"
-        >FileReader</a
-      >
-      来获取。AudioBuffer 是通过 AudioContext
-      采样率进行解码的，然后通过回调返回结果。
+      <progress id="progress" max="100" value="0"></progress>
+      播放时间：<b id="playTime">00:00:00</b>， 播放进度：<b id="progressVal">00.00</b>
+      %
     </p>
-
-    <h4>本地视音频文件点播</h4>
-    <div>
-      <input type="file" id="file" placeholder="请选择音频文件" />
-      <input type="range" id="L" min="0" max="100" />
-      <button id="start">启动</button>
-      <button id="play">播放 / 暂停</button>
-      <button id="step">停止</button>
-      <input type="range" id="R" min="0" max="100" />
-      <br />
-
-      <p>
-        <progress id="progress" max="100" value="0"></progress>
-        播放时间：<b id="playTime">00:00:00</b>， 播放进度：<b id="progressVal"
-          >00.00</b
-        >
-        %
-      </p>
-      <div id="progress-bar" onclick="getClickPosition(event)">
-        <div id="myProgress"></div>
-      </div>
+    <div id="progress-bar" onclick="getClickPosition(event)">
+      <div id="myProgress"></div>
     </div>
+  </div>
 
-    <hr />
+  <hr />
 
-    <h4>自动加载本地视音频文件播放</h4>
-    <div>
-      <button type="button" id="LBTN">静音左声道</button>
-      <button type="button" id="PBTN">播放 / 暂停</button>
-      <button type="button" id="RBTN">静音右声道</button>
-    </div>
+  <h4>自动加载本地视音频文件播放</h4>
+  <div>
+    <button type="button" id="LBTN">静音左声道</button>
+    <button type="button" id="PBTN">播放 / 暂停</button>
+    <button type="button" id="RBTN">静音右声道</button>
+  </div>
 
-    <script>
-	;(function (global, factory) {
+  <script>
+    ; (function (global, factory) {
       'use strict';
       let isInit = true;
       document.onclick = function () {
@@ -368,7 +367,7 @@
           }
         }
 
-        function setBalance(val) {}
+        function setBalance(val) { }
 
         LBTN.onclick = function () {
           volumeNodeL.gain.value = Number(!volumeNodeL.gain.value);
@@ -502,7 +501,8 @@
           false
         );
       }
-	}));
-    </script>
-  </body>
+    }));
+  </script>
+</body>
+
 </html>

@@ -11,12 +11,14 @@
         body {
             margin: 0;
         }
-        h1{
+
+        h1 {
             text-align: center;
         }
+
         button {
             cursor: pointer;
-             padding: 10px 20px;
+            padding: 10px 20px;
             font-size: 16px;
         }
 
@@ -93,8 +95,9 @@
 <body>
     <h1>Web前端 - 音乐可视化渲染 - 钢琴</h1>
     <hr />
+    <h3 style="color:red;">请在http服务器环境下打开！！</h3>
     <div class="audio-wrapper">
-        <ul class="piano" id="piano" >
+        <ul class="piano" id="piano">
             <li class="key white" data-f="261.626"></li>
             <li class="key black" data-f="277.183"></li>
             <li class="key white" data-f="293.665"></li>
@@ -307,7 +310,7 @@
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         for (let i = 0; i < frequencyData.length; i++) {
-            barHeight = frequencyData[i] ;
+            barHeight = frequencyData[i];
             ctx.fillStyle = 'rgb(100, 60,' + (barHeight + 180) + ')';
             // ctx.fillStyle = 'rgb(255, 255, 255)';
             ctx.fillRect(x, canvasHeight - barHeight / 2, barWidth, barHeight / 2);

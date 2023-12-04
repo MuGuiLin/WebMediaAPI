@@ -16,6 +16,10 @@
       text-align: center;
     }
 
+    h3{
+      line-height: 32px;
+      font-weight: normal;
+    }
     section {
       margin: 100px auto;
       width: 1200px;
@@ -33,7 +37,8 @@
     .VL,
     .VR,
     #VLV,
-    #TBLV {
+    #TBLV,
+    #TBRV {
       position: absolute;
       top: 30px;
       left: 0;
@@ -56,6 +61,12 @@
       right: 10px;
     }
 
+    #TBRV {
+      left: 20px;
+      top: 80px;
+      right: auto;
+    }
+
     meter {
       width: 128px;
       transform: rotate(-90deg);
@@ -68,12 +79,17 @@
 </head>
 
 <body>
-  <h1>Web Audio API examples: AudioWorkletNode()</h1>
+  <h1>Web Audio API examples: AudioWorkletNode() 获取Video/Audio视音频声道(左右声道|多声道)</h1>
   <hr />
 
-  <h3 style="color: blue">
-    超高清【8K UHD (7680 × 4320)】， 全景声(WANOS)【 (128个声道 和
-    128个声音对象)编码技术】
+  <h3 style="color: red">
+    之前通过createScriptProcessor()来获取视音频声道，由于W3C不再推荐使用该特性。所以在不久的将来也许会从相关的Web标准中移除，也许正准备移除或出于兼容性而保留。<br>
+
+    但尽管如此：目前所有现代浏览器包括早期点的浏览器均得到了很好的支持，还没有在哪个浏览器上被正式的移除。<br>
+    
+    所以来尝试使用 AudioWorkletNode() 来替代上面的createScriptProcessor() ，AudioWorkletNode()在目前看来几乎所有的主流浏览器都支持它，但需要注意的是：它现在还是一项实验性技术。<br>
+
+    目前的结论是：AudioWorkletNode() 比 ScriptProcessorNode() 性能更好，并且更易于使用，并且它还支持更多个的输入和输出通道。
   </h3>
 
   <section>
@@ -88,6 +104,7 @@
 
     <label>
       <meter id="R" min="-60" low="-10" high="-3" max="3" value="-60"></meter>
+      <span id="TBRV">响度：-60</span>
       <button type="button" id="RBTN">右声道（R）</button>
       <input type="range" id="VR" min="0" max="10" step="0.1" class="VR" value="1" />
     </label>
@@ -146,12 +163,15 @@
             const channelCount = 4 || audioSource.channelCount;
 
             // 创建音频处理器
-            await ac.audioWorklet.addModule('./processor.js')
+            await ac.audioWorklet.addModule('./processor.js');
             const processor = new AudioWorkletNode(ac, 'mu-processor', {
-              bufferSize,
-              channelCount,
-              parameterData: {},
+              // numberOfInputs: 1, // 初始化 numberOfInputs 属性的值。默认为 1。
+              // numberOfOutputs: 1, // 初始化 numberOfOutputs 属性的值。默认为 1。
+              // outputChannelCount: [], // 定义每个输出的通道数，例如：outputChannelCount: [n, m] 指定第一个输出中的通道数为 n，第二个输出中的通道数为 m。数组长度必须匹配 numberOfOutputs。
+              // parameterData: {}, // 节点上的自定义 AudioParam 对象的初始值（在其 parameters 属性中），其中 key 为自定义参数的名称，value 为其初始值。
+              // processorOptions: {} // 可用于基础 AudioWorkletProcessor 的自定义初始化的任何其他数据。
             });
+
             // 链接音频处理器
             audioSource.connect(processor).connect(ac.destination);
 
@@ -191,7 +211,6 @@
 
             // 监听音频处理器每次处理的样本帧
             processor.port.onmessage = (evt) => {
-              console.log(evt.data);
               if ('peaks' === evt.data.type) {
                 const { input } = evt.data;
 
@@ -203,6 +222,7 @@
                 // 声轨2
                 if (volumeNodeR.gain.value) {
                   R.value = getDbFromFloat(input[1]);
+                  TBRV.innerText = '响度：' + R.value.toFixed(2);
                 }
                 // 声轨3
                 if (volumeNodeSL.gain.value) {
@@ -216,6 +236,9 @@
               }
             };
 
+            processor.port.onmessageerror = (err) => {
+              console.error(err);
+            }
             // 静音左L声道
             LBTN.onclick = function () {
               volumeNodeL.gain.value = Number(!volumeNodeL.gain.value);

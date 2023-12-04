@@ -1,379 +1,372 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="./css/vjs.zencdn.net_8.5.2_video-js.css" />
-    <script async src="//hm.baidu.com/hm.js?f79493fc378b2235419a88daa91d5f6d"></script>
-    <!-- If you'd like to support IE8 (for Video.js versions prior to v7) -->
-    <!-- <script src="https://vjs.zencdn.net/ie8/1.1.2/videojs-ie8.min.js"></script> -->
-    <title>Track视音频轨</title>
-    <style>
-      body {
-        padding: 100px;
-      }
-      li {
-        line-height: 50px;
-      }
-    </style>
-  </head>
 
-  <body>
-    <h1>AudioTrack()音频音轨, VideoTrack()视频音轨</h1>
-    <hr />
-    <div>
-      <!-- muted静音自动播放
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="./css/vjs.zencdn.net_8.5.2_video-js.css" />
+  <script async src="//hm.baidu.com/hm.js?f79493fc378b2235419a88daa91d5f6d"></script>
+  <!-- If you'd like to support IE8 (for Video.js versions prior to v7) -->
+  <!-- <script src="https://vjs.zencdn.net/ie8/1.1.2/videojs-ie8.min.js"></script> -->
+  <title>Track视音频轨</title>
+  <style>
+    body {
+      padding: 100px;
+    }
+
+    li {
+      line-height: 50px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>AudioTrack()音频音轨, VideoTrack()视频音轨</h1>
+  <hr />
+  <div>
+    <!-- muted静音自动播放
       <video muted autoplay loop controls src="./202107.mp4"></video>  -->
 
-      <video
-        id="my-video"
-        class="video-js"
-        controls
-        preload="auto"
-        poster="./img/poster.png"
-        data-setup="{}"
-      >
-        <source src="./media/202107.mp4" type="video/mp4" />
-        <p class="vjs-no-js">
-          要观看此视频，请启用JavaScript，并升级浏览器！
-          <a href="https://videojs.com/html5-video-support/" target="_blank"
-            >支持HTML5视频</a
-          >
-        </p>
-      </video>
-    </div>
+    <video id="my-video" class="video-js" controls preload="auto" poster="./img/poster.png" data-setup="{}">
+      <source src="./media/202107.mp4" type="video/mp4" />
+      <p class="vjs-no-js">
+        要观看此视频，请启用JavaScript，并升级浏览器！
+        <a href="https://videojs.com/html5-video-support/" target="_blank">支持HTML5视频</a>
+      </p>
+    </video>
+  </div>
 
-    <br /><br />
+  <br /><br />
 
-    <div>
-      <input type="text" id="text" />
-      <button type="button" id="add">添加音轨</button>
-      <button type="button" id="play">play音轨</button>
-      <h2>音轨列表</h2>
-      <hr />
-      <ul id="trackList"></ul>
-    </div>
+  <div>
+    <input type="text" id="text" />
+    <button type="button" id="add">添加音轨</button>
+    <button type="button" id="play">play音轨</button>
+    <h2>音轨列表</h2>
+    <hr />
+    <ul id="trackList"></ul>
+  </div>
 
-    <script src="./js/vjs.zencdn.net_8.5.2_video.min.js"></script>
-    <script>
-      {
-        function hasAudio(video) {
+  <script src="./js/vjs.zencdn.net_8.5.2_video.min.js"></script>
+  <script>
+    {
+      function hasAudio(video) {
+        return (
+          video.mozHasAudio ||
+          Boolean(video.webkitAudioDecodedByteCount) ||
+          Boolean(video.audioTracks && video.audioTracks.length)
+        );
+      }
+
+      function hasAudio2(video) {
+        if (typeof video.webkitAudioDecodedByteCount !== "undefined") {
+          // 如果视频有音轨，则为非零
+          if (video.webkitAudioDecodedByteCount > 0) {
+            console.log(
+              `video has audio 视频有${video.webkitAudioDecodedByteCount}个音频`
+            );
+
+            console.log(video.audioTracks);
+          } else {
+            console.log("video doesn't have audio 视频没有音频");
+          }
+        } else if (typeof video.mozHasAudio !== "undefined") {
+          // 如果视频有音轨，则为true
+          if (video.mozHasAudio) {
+            console.log("video has audio 视频有音频");
+          } else {
+            console.log("video doesn't have audio 视频没有音频");
+          }
+        } else {
+          console.log(
+            "can't tell if video has audio 无法判断视频是否有音频！"
+          );
+        }
+      }
+
+      video.addEventListener("loadeddata", async function () {
+        // after waiting for the "canplaythrough" event: 等待“canplaythrough”事件后
+        // video.play(); // 注：必须是用户与页面交互，否则它不允许某些事件工作，除非将video设为mute静音！
+        await new Promise((r) => setTimeout(r, 1000));
+        hasAudio2(video);
+        console.log(hasAudio(video));
+      });
+
+      video.addEventListener("play", function () {
+        hasAudio2(video);
+        console.log(hasAudio(video));
+      });
+    }
+    {
+      class VideoTrack {
+        constructor({ video_el = "", track_el = "" }) {
+          if ("function" != typeof videojs) {
+            throw new TypeError("请添加video.js文件！");
+          }
+          if (!video_el) {
+            throw new TypeError("请传入video标签id！");
+          }
+          this.video_el = video_el;
+          this.track_el = document.querySelector(track_el);
+
+          // https://videojs.com/guides/audio-tracks
+          this.player = videojs(this.video_el);
+
+          this.render();
+        }
+
+        // 生成guid
+        guid() {
+          const S4 = () =>
+            (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
           return (
-            video.mozHasAudio ||
-            Boolean(video.webkitAudioDecodedByteCount) ||
-            Boolean(video.audioTracks && video.audioTracks.length)
+            S4() +
+            S4() +
+            "-" +
+            S4() +
+            "-" +
+            S4() +
+            "-" +
+            S4() +
+            "-" +
+            S4() +
+            S4() +
+            S4()
           );
         }
 
-        function hasAudio2(video) {
-          if (typeof video.webkitAudioDecodedByteCount !== "undefined") {
-            // 如果视频有音轨，则为非零
-            if (video.webkitAudioDecodedByteCount > 0) {
-              console.log(
-                `video has audio 视频有${video.webkitAudioDecodedByteCount}个音频`
-              );
-
-              console.log(video.audioTracks);
-            } else {
-              console.log("video doesn't have audio 视频没有音频");
-            }
-          } else if (typeof video.mozHasAudio !== "undefined") {
-            // 如果视频有音轨，则为true
-            if (video.mozHasAudio) {
-              console.log("video has audio 视频有音频");
-            } else {
-              console.log("video doesn't have audio 视频没有音频");
-            }
-          } else {
-            console.log(
-              "can't tell if video has audio 无法判断视频是否有音频！"
-            );
-          }
-        }
-
-        video.addEventListener("loadeddata", async function () {
-          // after waiting for the "canplaythrough" event: 等待“canplaythrough”事件后
-          // video.play(); // 注：必须是用户与页面交互，否则它不允许某些事件工作，除非将video设为mute静音！
-          await new Promise((r) => setTimeout(r, 1000));
-          hasAudio2(video);
-          console.log(hasAudio(video));
-        });
-
-        video.addEventListener("play", function () {
-          hasAudio2(video);
-          console.log(hasAudio(video));
-        });
-      }
-      {
-        class VideoTrack {
-          constructor({ video_el = "", track_el = "" }) {
-            if ("function" != typeof videojs) {
-              throw new TypeError("请添加video.js文件！");
-            }
-            if (!video_el) {
-              throw new TypeError("请传入video标签id！");
-            }
-            this.video_el = video_el;
-            this.track_el = document.querySelector(track_el);
-
-            // https://videojs.com/guides/audio-tracks
-            this.player = videojs(this.video_el);
-
+        add({
+          id = this.guid() || Math.random().toString(36).substring(2),
+          kind = "translation",
+          label = "Spanish-" + Date.now(),
+          language = "en",
+          enabled = Boolean(Math.random() > 0.5),
+        } = {}) {
+          try {
+            const track = new videojs.AudioTrack({
+              id,
+              kind,
+              // "alternative"：主轨道的可能替代方案。
+              // "descriptions"：视频轨道的音频描述。
+              // "main"：此视频的主要音轨。
+              // "main-desc"：主要音轨，混合音频描述。
+              // "translation"：主音轨的翻译版本。
+              // "commentary"：对主要音轨的评论，例如导演的评论。
+              // ""（默认值）：没有显式类型，或者轨道元数据给出的种类不是 由用户代理识别。
+              label,
+              language,
+              enabled,
+            });
+            // 将曲目添加到播放器的音轨列表中
+            this.player.audioTracks().addTrack(track);
+          } catch (err) {
+            console.error(err);
+          } finally {
             this.render();
           }
+        }
 
-          // 生成guid
-          guid() {
-            const S4 = () =>
-              (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
-            return (
-              S4() +
-              S4() +
-              "-" +
-              S4() +
-              "-" +
-              S4() +
-              "-" +
-              S4() +
-              "-" +
-              S4() +
-              S4() +
-              S4()
-            );
+        del(id = "") {
+          if (!id) {
+            alert("音轨id不能为空！");
           }
+          try {
+            if (confirm("是否确定删除？")) {
+              //获取我们在前面的示例中创建的轨迹。
+              const track = this.player.audioTracks().getTrackById(id);
 
-          add({
-            id = this.guid() || Math.random().toString(36).substring(2),
-            kind = "translation",
-            label = "Spanish-" + Date.now(),
-            language = "en",
-            enabled = Boolean(Math.random() > 0.5),
-          } = {}) {
-            try {
-              const track = new videojs.AudioTrack({
-                id,
-                kind,
-                // "alternative"：主轨道的可能替代方案。
-                // "descriptions"：视频轨道的音频描述。
-                // "main"：此视频的主要音轨。
-                // "main-desc"：主要音轨，混合音频描述。
-                // "translation"：主音轨的翻译版本。
-                // "commentary"：对主要音轨的评论，例如导演的评论。
-                // ""（默认值）：没有显式类型，或者轨道元数据给出的种类不是 由用户代理识别。
-                label,
-                language,
-                enabled,
-              });
-              // 将曲目添加到播放器的音轨列表中
-              this.player.audioTracks().addTrack(track);
-            } catch (err) {
-              console.error(err);
-            } finally {
-              this.render();
+              // 将其从音轨列表中删除。
+              this.player.audioTracks().removeTrack(track);
             }
-          }
-
-          del(id = "") {
-            if (!id) {
-              alert("音轨id不能为空！");
-            }
-            try {
-              if (confirm("是否确定删除？")) {
-                //获取我们在前面的示例中创建的轨迹。
-                const track = this.player.audioTracks().getTrackById(id);
-
-                // 将其从音轨列表中删除。
-                this.player.audioTracks().removeTrack(track);
-              }
-            } catch (err) {
-              console.error(err);
-            } finally {
-              this.render();
-            }
-          }
-
-          tracks() {
-            // 获取当前播放器的AudioTrackList对象。
-            const audioTracks = this.player.audioTracks();
-
-            // 监听音频改变时触发
-            audioTracks.addEventListener("change", function (e) {
-              console.log("监听音频改变时触发：", e);
-
-              // 记录当前启用的AudioTrack标签。
-              for (let i = 0; i < audioTracks.length; i++) {
-                const track = audioTracks[i];
-
-                if (track.enabled) {
-                  videojs.log(track.label);
-                  return;
-                }
-              }
-            });
-
-            // 监听添加轨道时触发
-            audioTracks.addEventListener("addtrack", function (e) {
-              console.log("监听添加轨道时触发：", e);
-            });
-
-            // 监听删除轨道时触发
-            audioTracks.addEventListener("removetrack", function (e) {
-              console.log("监听删除轨道时触发：", e);
-            });
-
-            // 监听删除轨道时触发
-            audioTracks.addEventListener("cuechange", function (e) {
-              console.log("cuechange时触发：", e);
-            });
-
-            return audioTracks;
-          }
-
-          render() {
-            const tracks = this.tracks();
-            console.log(tracks);
-
-            let li = "";
-            if (tracks.length) {
-              for (let i = 0; i < tracks.length; i++) {
-                const { id, kind, label, language, enabled } = tracks[i];
-                li += `<li>${
-                  i + 1
-                }、<b>ID：${id}；</b> kind：${kind}；label：${label}；language：${language}；enabled：${enabled}； <button type="button" onClick="vt.del('${id}')">⚔️删除音轨</button>`;
-              }
-            }
-            this.track_el.innerHTML = li;
+          } catch (err) {
+            console.error(err);
+          } finally {
+            this.render();
           }
         }
 
-        const vt = new VideoTrack({
-          video_el: "my-video",
-          track_el: "#trackList",
-        });
+        tracks() {
+          // 获取当前播放器的AudioTrackList对象。
+          const audioTracks = this.player.audioTracks();
 
-        console.log("player", vt.player);
+          // 监听音频改变时触发
+          audioTracks.addEventListener("change", function (e) {
+            console.log("监听音频改变时触发：", e);
 
-        const text = document.querySelector("#text");
-        document.querySelector("#add").addEventListener("click", (event) => {
-          text.value ? vt.add({ id: text.value }) : vt.add();
-        });
+            // 记录当前启用的AudioTrack标签。
+            for (let i = 0; i < audioTracks.length; i++) {
+              const track = audioTracks[i];
+
+              if (track.enabled) {
+                videojs.log(track.label);
+                return;
+              }
+            }
+          });
+
+          // 监听添加轨道时触发
+          audioTracks.addEventListener("addtrack", function (e) {
+            console.log("监听添加轨道时触发：", e);
+          });
+
+          // 监听删除轨道时触发
+          audioTracks.addEventListener("removetrack", function (e) {
+            console.log("监听删除轨道时触发：", e);
+          });
+
+          // 监听删除轨道时触发
+          audioTracks.addEventListener("cuechange", function (e) {
+            console.log("cuechange时触发：", e);
+          });
+
+          return audioTracks;
+        }
+
+        render() {
+          const tracks = this.tracks();
+          console.log(tracks);
+
+          let li = "";
+          if (tracks.length) {
+            for (let i = 0; i < tracks.length; i++) {
+              const { id, kind, label, language, enabled } = tracks[i];
+              li += `<li>${i + 1
+                }、<b>ID：${id}；</b> kind：${kind}；label：${label}；language：${language}；enabled：${enabled}； <button type="button" onClick="vt.del('${id}')">⚔️删除音轨</button>`;
+            }
+          }
+          this.track_el.innerHTML = li;
+        }
       }
 
-      /*
-        e.renderVUMeter = function() {
-            var f = this.player_.nbOfChnlsAudio_;
-            if (0 !== f) {
-                var t = new (C.AudioContext || C.webkitAudioContext)
-                  , e = k.querySelector("video")
-                  , i = t.createMediaElementSource(e)
-                  , m = t.createChannelSplitter(f)
-                  , n = t.createChannelSplitter(f);
-                i.connect(n);
-                var r = t.createChannelMerger(f)
-                  , a = t.createScriptProcessor(4096, 1, 1);
-                i.connect(m);
-                for (var g = [], s = 0; s < f; s++) {
-                    var o = t.createAnalyser();
-                    o.fftSize = 2048,
-                    g.push(o);
-                    var l = t.createGain();
-                    l.gain.value = 1,
-                    Ma.push(l),
-                    Na.push(1),
-                    m.connect(l, s, 0),
-                    l.connect(o, 0, 0)
-                }
-                for (var u = 0; u < f; u++) {
-                    var c = t.createGain();
-                    c.gain.value = 1,
-                    xa.push(c),
-                    n.connect(c, u, 0),
-                    c.connect(r, 0, u)
-                }
-                var y = this.getVolumeDb
-                  , v = this.player_
-                  , _ = this.el()
-                  , b = _.height
-                  , T = _.width
-                  , S = 0;
-                a.onaudioprocess = function() {
-                    !function() {
-                        var t = _.getContext("2d");
-                        v.isFullscreen() && (t.canvas.width = 48,
-                        t.canvas.height = C.innerHeight - 57,
-                        b = C.innerHeight - 57,
-                        T = 48);
-                        v.isFullscreen() || (t.canvas.width = 48,
-                        t.canvas.height = v.currentHeight() - 96,
-                        b = v.currentHeight() - 96,
-                        T = 48);
-                        t.clearRect(0, 0, T, b);
-                        var e = t.createLinearGradient(0, 0, 0, b);
-                        e.addColorStop(0, "#F34B97"),
-                        e.addColorStop(.5, "#ffff4d"),
-                        e.addColorStop(.85, "#329142"),
-                        t.fillStyle = e;
-                        for (var i = 0; i < f; i++) {
-                            var n = g[i]
-                              , r = Ma[i]
-                              , a = n.frequencyBinCount
-                              , s = new Float32Array(a);
-                            n.getFloatTimeDomainData(s);
-                            var o = y(s)
-                              , l = -100
-                              , u = b / 9
-                              , c = u / 5
-                              , h = b / 9 * 8
-                              , d = h / 80
-                              , p = 0;
-                            o < 0 ? (l = o,
-                            l = 8 * Math.floor(Math.abs(l)) / 7,
-                            p = u + d * l + S) : 0 < o && (l = o,
-                            l = 5 * Math.floor(Math.abs(l)),
-                            p = u - c * l + S),
-                            0 === o || "0" === Na[i] ? t.clearRect(6 * i, 0, 2, b) : t.fillRect(6 * i, p, 2, b - p),
-                            m.connect(r, i, 0),
-                            r.connect(n, 0, 0)
-                        }
-                    }()
-                }
-                ,
-                g[0].connect(a),
-                a.connect(t.destination),
-                r.connect(t.destination)
-            }
-        }
-      */
+      const vt = new VideoTrack({
+        video_el: "my-video",
+        track_el: "#trackList",
+      });
 
-      /*
-      # 这个类基于AudioTrack标准，用于创建新的音频轨道对象。
+      console.log("player", vt.player);
 
-        AudioTrack构造器的选项如下：
+      const text = document.querySelector("#text");
+      document.querySelector("#add").addEventListener("click", (event) => {
+        text.value ? vt.add({ id: text.value }) : vt.add();
+      });
+    }
 
-        id 
-          轨道的一个唯一标识，如果没有给出，videojs会自动创建一个。
+    /*
+      e.renderVUMeter = function() {
+          var f = this.player_.nbOfChnlsAudio_;
+          if (0 !== f) {
+              var t = new (C.AudioContext || C.webkitAudioContext)
+                , e = k.querySelector("video")
+                , i = t.createMediaElementSource(e)
+                , m = t.createChannelSplitter(f)
+                , n = t.createChannelSplitter(f);
+              i.connect(n);
+              var r = t.createChannelMerger(f)
+                , a = t.createScriptProcessor(4096, 1, 1);
+              i.connect(m);
+              for (var g = [], s = 0; s < f; s++) {
+                  var o = t.createAnalyser();
+                  o.fftSize = 2048,
+                  g.push(o);
+                  var l = t.createGain();
+                  l.gain.value = 1,
+                  Ma.push(l),
+                  Na.push(1),
+                  m.connect(l, s, 0),
+                  l.connect(o, 0, 0)
+              }
+              for (var u = 0; u < f; u++) {
+                  var c = t.createGain();
+                  c.gain.value = 1,
+                  xa.push(c),
+                  n.connect(c, u, 0),
+                  c.connect(r, 0, u)
+              }
+              var y = this.getVolumeDb
+                , v = this.player_
+                , _ = this.el()
+                , b = _.height
+                , T = _.width
+                , S = 0;
+              a.onaudioprocess = function() {
+                  !function() {
+                      var t = _.getContext("2d");
+                      v.isFullscreen() && (t.canvas.width = 48,
+                      t.canvas.height = C.innerHeight - 57,
+                      b = C.innerHeight - 57,
+                      T = 48);
+                      v.isFullscreen() || (t.canvas.width = 48,
+                      t.canvas.height = v.currentHeight() - 96,
+                      b = v.currentHeight() - 96,
+                      T = 48);
+                      t.clearRect(0, 0, T, b);
+                      var e = t.createLinearGradient(0, 0, 0, b);
+                      e.addColorStop(0, "#F34B97"),
+                      e.addColorStop(.5, "#ffff4d"),
+                      e.addColorStop(.85, "#329142"),
+                      t.fillStyle = e;
+                      for (var i = 0; i < f; i++) {
+                          var n = g[i]
+                            , r = Ma[i]
+                            , a = n.frequencyBinCount
+                            , s = new Float32Array(a);
+                          n.getFloatTimeDomainData(s);
+                          var o = y(s)
+                            , l = -100
+                            , u = b / 9
+                            , c = u / 5
+                            , h = b / 9 * 8
+                            , d = h / 80
+                            , p = 0;
+                          o < 0 ? (l = o,
+                          l = 8 * Math.floor(Math.abs(l)) / 7,
+                          p = u + d * l + S) : 0 < o && (l = o,
+                          l = 5 * Math.floor(Math.abs(l)),
+                          p = u - c * l + S),
+                          0 === o || "0" === Na[i] ? t.clearRect(6 * i, 0, 2, b) : t.fillRect(6 * i, p, 2, b - p),
+                          m.connect(r, i, 0),
+                          r.connect(n, 0, 0)
+                      }
+                  }()
+              }
+              ,
+              g[0].connect(a),
+              a.connect(t.destination),
+              r.connect(t.destination)
+          }
+      }
+    */
 
-        kind
-          Video.js支持AudioTracks的标准类型值：
-          "alternative"：主轨道的可能替代方案。
-          "descriptions"：视频轨道的音频描述。
-          "main"：此视频的主要音轨。
-          "main-desc"：主要音轨，混合音频描述。
-          "translation"：主音轨的翻译版本。
-          "commentary"：对主要音轨的评论，例如导演的评论。
-          ""（默认值）：没有显式类型，或者轨道元数据给出的种类不是 由用户代理识别。
+    /*
+    # 这个类基于AudioTrack标准，用于创建新的音频轨道对象。
 
-        label 
-          将向用户显示的轨道标签。 例如，在菜单中列出可用作备用音轨的不同语言。
+      AudioTrack构造器的选项如下：
 
-        language
-          用于音频轨道语言的有效BCP 47代码，例如 “ en”代表英语，“ es”代表西班牙语。
-          相关支持的语言翻译，请参阅Video.js根目录中的语言文件夹（/ lang），并参阅语言指南以获取有关Video.js中语言的更多信息。
+      id 
+        轨道的一个唯一标识，如果没有给出，videojs会自动创建一个。
 
-        selected
-          无论轨道是否在播放，一次只能选择一个视频轨道。
-      */
-    </script>
-  </body>
+      kind
+        Video.js支持AudioTracks的标准类型值：
+        "alternative"：主轨道的可能替代方案。
+        "descriptions"：视频轨道的音频描述。
+        "main"：此视频的主要音轨。
+        "main-desc"：主要音轨，混合音频描述。
+        "translation"：主音轨的翻译版本。
+        "commentary"：对主要音轨的评论，例如导演的评论。
+        ""（默认值）：没有显式类型，或者轨道元数据给出的种类不是 由用户代理识别。
+
+      label 
+        将向用户显示的轨道标签。 例如，在菜单中列出可用作备用音轨的不同语言。
+
+      language
+        用于音频轨道语言的有效BCP 47代码，例如 “ en”代表英语，“ es”代表西班牙语。
+        相关支持的语言翻译，请参阅Video.js根目录中的语言文件夹（/ lang），并参阅语言指南以获取有关Video.js中语言的更多信息。
+
+      selected
+        无论轨道是否在播放，一次只能选择一个视频轨道。
+    */
+  </script>
+</body>
+
 </html>

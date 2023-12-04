@@ -10,16 +10,19 @@
     <!-- <script src="https://fastly.jsdelivr.net/npm/echarts-gl@2/dist/echarts-gl.min.js"></script> -->
     <title>Web前端 - 音乐可视化渲染</title>
     <style>
-        h1{
+        h1 {
             text-align: center;
         }
-        .box{
+
+        .box {
             padding: 50px;
         }
-        audio{
+
+        audio {
             width: 100%;
         }
-        button{
+
+        button {
             padding: 10px 20px;
             font-size: 16px;
         }
@@ -29,8 +32,9 @@
 <body>
     <h1>Web前端 - 音乐可视化渲染</h1>
     <hr />
+    <h3 style="color:red;">请在http服务器环境下打开！！</h3>
 
-    <div class="box">   
+    <div class="box">
         <audio controls loop id="audio" src="./mp3/程欣-重来.mp3"></audio>
         <h2>自定义Canvas渲染</h2>
         <button class="playButton" data-type="manual">操作 / 播放</button>
