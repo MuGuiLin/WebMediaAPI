@@ -117,216 +117,218 @@
       <meter id="SR" min="-60" low="-20" high="-6" max="3" value="-60"></meter>
       <button type="button" id="SRBTN">右环绕（SR）</button>
     </div>
-    <section>
+  </section>
+  <br><br><br>
+  <a href="https://blog.csdn.net/muguli2008/article/details/134762971" target="_blank">🚀了解更多！</a>
 
-      <script>
-        // 获取本地视音频
-        file.addEventListener("change", function () {
-          const file = this.files[0];
-          console.log(file);
-          if ("video/mp4".startsWith("video")) {
-            // video.src = window.URL.createObjectURL(file);
-            audio.src = window.URL.createObjectURL(file);
-          } else {
-            audio.src = window.URL.createObjectURL(file);
-          }
+  <script>
+    // 获取本地视音频
+    file.addEventListener("change", function () {
+      const file = this.files[0];
+      console.log(file);
+      if ("video/mp4".startsWith("video")) {
+        // video.src = window.URL.createObjectURL(file);
+        audio.src = window.URL.createObjectURL(file);
+      } else {
+        audio.src = window.URL.createObjectURL(file);
+      }
+    });
+
+    // 计算音频log对数
+    function getBaseLog(x, y) {
+      return Math.log(y) / Math.log(x);
+    };
+
+    // 计数峰值电平
+    function countPeakLevel(float) {
+      return getBaseLog(10, float) * 20;
+    };
+
+    // 提取声轨并计算最大值
+    function countMaxValue(buffer) {
+      const channels = [], { numberOfChannels } = buffer;
+      for (let i = 0; i < numberOfChannels; i += 1) {
+        channels[i] = 0.0;
+        const channelData = buffer.getChannelData(i);
+        for (let j = 0; j < channelData.length; j += 1) {
+          (Math.abs(channelData[j]) > channels[i]) && (channels[i] = Math.abs(channelData[j]));
+        }
+      }
+      return channels;
+    };
+
+    // const audio = document.querySelector("audio");
+    const audio = document.querySelector("video");
+    let ac = null;
+
+    // 音频元数据加载后执行
+    audio.addEventListener("loadedmetadata", () => {
+      if (!ac) {
+        // 上下文对象 由于浏览器安全策略要求音频上下文必须在用户事件（单击、键盘按键等）中启用。这意味着，如果您尝试在没有用户事件的情况下自动播放音乐，所以在loadedmetadata元数据已加载时再执行！！
+        ac = new (window.AudioContext || window.webkitAudioContext)();
+
+        // 创建并获取输入源
+        const audioSource = ac.createMediaElementSource(audio);
+        // 缓冲区大小 取值为 2 的幂次方的一个常数
+        const bufferSize = 2048;
+        // 音频通道数 默认值是 2，最高能取 32
+        const channelCount = 4 || audioSource.channelCount;
+
+        // 创建音频处理器
+        const processor = ac.createScriptProcessor(bufferSize, channelCount, channelCount);
+        // 链接音频处理器
+        audioSource.connect(processor).connect(ac.destination);
+
+        // 创建通道控制器
+        const volumeNodeL = new GainNode(ac, { gain: 1 });
+        const volumeNodeR = new GainNode(ac, { gain: 1 });
+        const volumeNodeSL = new GainNode(ac, { gain: 1 });
+        const volumeNodeSR = new GainNode(ac, { gain: 1 });
+
+        // 创建通道分配器
+        const splitterNode = new ChannelSplitterNode(ac, {
+          numberOfOutputs: channelCount,
         });
 
-        // 计算音频log对数
-        function getBaseLog(x, y) {
-          return Math.log(y) / Math.log(x);
-        };
+        splitterNode.connect(volumeNodeL, 0);
+        splitterNode.connect(volumeNodeR, 1);
+        splitterNode.connect(volumeNodeSL, 2);
+        splitterNode.connect(volumeNodeSR, 3);
 
-        // 计数峰值电平
-        function countPeakLevel(float) {
-          return getBaseLog(10, float) * 20;
-        };
+        // 控制链接到输入源
+        audioSource.connect(splitterNode);
 
-        // 提取声轨并计算最大值
-        function countMaxValue(buffer) {
-          const channels = [], { numberOfChannels } = buffer;
-          for (let i = 0; i < numberOfChannels; i += 1) {
-            channels[i] = 0.0;
-            const channelData = buffer.getChannelData(i);
-            for (let j = 0; j < channelData.length; j += 1) {
-              (Math.abs(channelData[j]) > channels[i]) && (channels[i] = Math.abs(channelData[j]));
-            }
+        // 创建通道合并器
+        const mergerNode = new ChannelMergerNode(ac, {
+          numberOfInputs: channelCount,
+        });
+
+        volumeNodeL.connect(mergerNode, 0, 0);
+        volumeNodeR.connect(mergerNode, 0, 1);
+        volumeNodeSL.connect(mergerNode, 0, 2);
+        volumeNodeSR.connect(mergerNode, 0, 3);
+
+        // 通道链接到扬声器
+        mergerNode.connect(ac.destination);
+
+        audio.play();
+
+        // 监听音频处理器每次处理的样本帧
+        processor.onaudioprocess = (evt) => {
+          // console.log("音频通道数：", evt.inputBuffer.numberOfChannels);
+
+          //获取声轨1输入的缓冲区数据
+          // evt.inputBuffer.getChannelData(0);
+
+          //获取声轨1输出的缓冲区数据
+          // evt.outputBuffer.getChannelData(0);
+
+          const [l, r, sl, sr] = countMaxValue(evt.inputBuffer);
+
+          // 声轨1
+          if (volumeNodeL.gain.value && l) {
+            L.value = countPeakLevel(l);
+            TBLV.innerText = '峰值电平：' + L.value.toFixed(2);
           }
-          return channels;
+          // 声轨2
+          if (volumeNodeR.gain.value && r) {
+            R.value = countPeakLevel(r);
+            TBRV.innerText = '峰值电平：' + R.value.toFixed(2);
+          }
+          // 声轨3
+          if (volumeNodeSL.gain.value && sl) {
+            SL.value = countPeakLevel(sl);
+          }
+          // 声轨4
+          if (volumeNodeSR.gain.value && sr) {
+            SR.value = countPeakLevel(sr);
+          }
+
+          /*
+          if (volumeNodeL.gain.value) {
+            // 声轨1
+            let input = evt.inputBuffer.getChannelData(0),
+              len = input.length,
+              i = 0;
+            while (i < len) {
+              L.value = countPeakLevel(input[i++]);
+              TBLV.innerText = '峰值电平：' + L.value.toFixed(2);
+            }
+          };
+
+          if (volumeNodeR.gain.value) {
+            // 声轨2
+            let input = evt.inputBuffer.getChannelData(1),
+              len = input.length,
+              i = 0;
+            while (i < len) {
+              R.value = countPeakLevel(input[i++]);
+              TBRV.innerText = '峰值电平：' + R.value.toFixed(2);
+            }
+          };
+
+          if (volumeNodeSL.gain.value) {
+            // 声轨3 (为了性能，这里不实时计算，只取第1个样本帧计算一次)
+            let input = evt.inputBuffer.getChannelData(2);
+            SL.value = countPeakLevel(input[0]);
+          };
+
+          if (volumeNodeSR.gain.value) {
+            // 声轨4 (为了性能，这里不实时计算，只取中间的计算一次)
+            let input = evt.inputBuffer.getChannelData(3);
+            SR.value = countPeakLevel(input[input.length / 2]);
+          };
+          */
         };
 
-        // const audio = document.querySelector("audio");
-        const audio = document.querySelector("video");
-        let ac = null;
+        // 静音左L声道
+        LBTN.onclick = function () {
+          volumeNodeL.gain.value = Number(!volumeNodeL.gain.value);
+        };
 
-        // 音频元数据加载后执行
-        audio.addEventListener("loadedmetadata", () => {
-          if (!ac) {
-            // 上下文对象 由于浏览器安全策略要求音频上下文必须在用户事件（单击、键盘按键等）中启用。这意味着，如果您尝试在没有用户事件的情况下自动播放音乐，所以在loadedmetadata元数据已加载时再执行！！
-            ac = new (window.AudioContext || window.webkitAudioContext)();
+        // 左L声道音量大小控制
+        VL.oninput = function () {
+          // volumeNodeL.gain.value = this.value;
+          volumeNodeL.gain.setValueAtTime(this.value, ac.currentTime);
+          VLV.innerText = '音量：' + this.value;
+        };
 
-            // 创建并获取输入源
-            const audioSource = ac.createMediaElementSource(audio);
-            // 缓冲区大小 取值为 2 的幂次方的一个常数
-            const bufferSize = 2048;
-            // 音频通道数 默认值是 2，最高能取 32
-            const channelCount = 4 || audioSource.channelCount;
+        // 静音右R声道
+        RBTN.onclick = function () {
+          volumeNodeR.gain.value = Number(!volumeNodeR.gain.value);
+        };
 
-            // 创建音频处理器
-            const processor = ac.createScriptProcessor(bufferSize, channelCount, channelCount);
-            // 链接音频处理器
-            audioSource.connect(processor).connect(ac.destination);
+        // 右R声道音量大小控制
+        VR.oninput = function () {
+          volumeNodeR.gain.setValueAtTime(this.value, ac.currentTime);
+          VRV.innerText = '音量：' + this.value;
+        };
 
-            // 创建通道控制器
-            const volumeNodeL = new GainNode(ac, { gain: 1 });
-            const volumeNodeR = new GainNode(ac, { gain: 1 });
-            const volumeNodeSL = new GainNode(ac, { gain: 1 });
-            const volumeNodeSR = new GainNode(ac, { gain: 1 });
+        // 静音左环绕SL声道
+        SLBTN.onclick = function () {
+          volumeNodeSL.gain.value = Number(!volumeNodeSL.gain.value);
+        };
 
-            // 创建通道分配器
-            const splitterNode = new ChannelSplitterNode(ac, {
-              numberOfOutputs: channelCount,
-            });
+        // 静音右环绕SR声道
+        SRBTN.onclick = function () {
+          volumeNodeSR.gain.value = Number(!volumeNodeSR.gain.value);
+        };
+      } else {
+        audio.play();
+      };
+    }, false);
 
-            splitterNode.connect(volumeNodeL, 0);
-            splitterNode.connect(volumeNodeR, 1);
-            splitterNode.connect(volumeNodeSL, 2);
-            splitterNode.connect(volumeNodeSR, 3);
+    // 监听音频播放时，激活当前播放
+    audio.addEventListener('play', () => {
+      ac.resume();
+    }, false);
 
-            // 控制链接到输入源
-            audioSource.connect(splitterNode);
+    // 监听音频暂停时，挂起当前播放
+    audio.addEventListener('pause', () => {
+      ac.suspend();
+    }, false);
 
-            // 创建通道合并器
-            const mergerNode = new ChannelMergerNode(ac, {
-              numberOfInputs: channelCount,
-            });
-
-            volumeNodeL.connect(mergerNode, 0, 0);
-            volumeNodeR.connect(mergerNode, 0, 1);
-            volumeNodeSL.connect(mergerNode, 0, 2);
-            volumeNodeSR.connect(mergerNode, 0, 3);
-
-            // 通道链接到扬声器
-            mergerNode.connect(ac.destination);
-
-            audio.play();
-
-            // 监听音频处理器每次处理的样本帧
-            processor.onaudioprocess = (evt) => {
-              // console.log("音频通道数：", evt.inputBuffer.numberOfChannels);
-
-              //获取声轨1输入的缓冲区数据
-              // evt.inputBuffer.getChannelData(0);
-
-              //获取声轨1输出的缓冲区数据
-              // evt.outputBuffer.getChannelData(0);
-
-              const [l, r, sl, sr] = countMaxValue(evt.inputBuffer);
-
-              // 声轨1
-              if (volumeNodeL.gain.value && l) {
-                L.value = countPeakLevel(l);
-                TBLV.innerText = '峰值电平：' + L.value.toFixed(2);
-              }
-              // 声轨2
-              if (volumeNodeR.gain.value && r) {
-                R.value = countPeakLevel(r);
-                TBRV.innerText = '峰值电平：' + R.value.toFixed(2);
-              }
-              // 声轨3
-              if (volumeNodeSL.gain.value && sl) {
-                SL.value = countPeakLevel(sl);
-              }
-              // 声轨4
-              if (volumeNodeSR.gain.value && sr) {
-                SR.value = countPeakLevel(sr);
-              }
-
-              /*
-              if (volumeNodeL.gain.value) {
-                // 声轨1
-                let input = evt.inputBuffer.getChannelData(0),
-                  len = input.length,
-                  i = 0;
-                while (i < len) {
-                  L.value = countPeakLevel(input[i++]);
-                  TBLV.innerText = '峰值电平：' + L.value.toFixed(2);
-                }
-              };
-
-              if (volumeNodeR.gain.value) {
-                // 声轨2
-                let input = evt.inputBuffer.getChannelData(1),
-                  len = input.length,
-                  i = 0;
-                while (i < len) {
-                  R.value = countPeakLevel(input[i++]);
-                  TBRV.innerText = '峰值电平：' + R.value.toFixed(2);
-                }
-              };
-
-              if (volumeNodeSL.gain.value) {
-                // 声轨3 (为了性能，这里不实时计算，只取第1个样本帧计算一次)
-                let input = evt.inputBuffer.getChannelData(2);
-                SL.value = countPeakLevel(input[0]);
-              };
-
-              if (volumeNodeSR.gain.value) {
-                // 声轨4 (为了性能，这里不实时计算，只取中间的计算一次)
-                let input = evt.inputBuffer.getChannelData(3);
-                SR.value = countPeakLevel(input[input.length / 2]);
-              };
-              */
-            };
-
-            // 静音左L声道
-            LBTN.onclick = function () {
-              volumeNodeL.gain.value = Number(!volumeNodeL.gain.value);
-            };
-
-            // 左L声道音量大小控制
-            VL.oninput = function () {
-              // volumeNodeL.gain.value = this.value;
-              volumeNodeL.gain.setValueAtTime(this.value, ac.currentTime);
-              VLV.innerText = '音量：' + this.value;
-            };
-
-            // 静音右R声道
-            RBTN.onclick = function () {
-              volumeNodeR.gain.value = Number(!volumeNodeR.gain.value);
-            };
-
-            // 右R声道音量大小控制
-            VR.oninput = function () {
-              volumeNodeR.gain.setValueAtTime(this.value, ac.currentTime);
-              VRV.innerText = '音量：' + this.value;
-            };
-
-            // 静音左环绕SL声道
-            SLBTN.onclick = function () {
-              volumeNodeSL.gain.value = Number(!volumeNodeSL.gain.value);
-            };
-
-            // 静音右环绕SR声道
-            SRBTN.onclick = function () {
-              volumeNodeSR.gain.value = Number(!volumeNodeSR.gain.value);
-            };
-          } else {
-            audio.play();
-          };
-        }, false);
-
-        // 监听音频播放时，激活当前播放
-        audio.addEventListener('play', () => {
-          ac.resume();
-        }, false);
-
-        // 监听音频暂停时，挂起当前播放
-        audio.addEventListener('pause', () => {
-          ac.suspend();
-        }, false);
-
-      </script>
+  </script>
 </body>
 
 </html>
