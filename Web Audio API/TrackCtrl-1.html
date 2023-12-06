@@ -132,13 +132,27 @@
           }
         });
 
+        // 计算音频log对数
         function getBaseLog(x, y) {
           return Math.log(y) / Math.log(x);
         };
 
-        // 计算音频Peak Level
+        // 计数峰值电平
         function countPeakLevel(float) {
           return getBaseLog(10, float) * 20;
+        };
+
+        // 提取声轨并计算最大值
+        function countMaxValue(buffer) {
+          const channels = [], { numberOfChannels } = buffer;
+          for (let i = 0; i < numberOfChannels; i += 1) {
+            channels[i] = 0.0;
+            const channelData = buffer.getChannelData(i);
+            for (let j = 0; j < channelData.length; j += 1) {
+              (Math.abs(channelData[j]) > channels[i]) && (channels[i] = Math.abs(channelData[j]));
+            }
+          }
+          return channels;
         };
 
         // const audio = document.querySelector("audio");
@@ -207,6 +221,28 @@
               //获取声轨1输出的缓冲区数据
               // evt.outputBuffer.getChannelData(0);
 
+              const [l, r, sl, sr] = countMaxValue(evt.inputBuffer);
+
+              // 声轨1
+              if (volumeNodeL.gain.value && l) {
+                L.value = countPeakLevel(l);
+                TBLV.innerText = '峰值电平：' + L.value.toFixed(2);
+              }
+              // 声轨2
+              if (volumeNodeR.gain.value && r) {
+                R.value = countPeakLevel(r);
+                TBRV.innerText = '峰值电平：' + R.value.toFixed(2);
+              }
+              // 声轨3
+              if (volumeNodeSL.gain.value && sl) {
+                SL.value = countPeakLevel(sl);
+              }
+              // 声轨4
+              if (volumeNodeSR.gain.value && sr) {
+                SR.value = countPeakLevel(sr);
+              }
+
+              /*
               if (volumeNodeL.gain.value) {
                 // 声轨1
                 let input = evt.inputBuffer.getChannelData(0),
@@ -240,7 +276,7 @@
                 let input = evt.inputBuffer.getChannelData(3);
                 SR.value = countPeakLevel(input[input.length / 2]);
               };
-
+              */
             };
 
             // 静音左L声道
@@ -263,6 +299,7 @@
             // 右R声道音量大小控制
             VR.oninput = function () {
               volumeNodeR.gain.setValueAtTime(this.value, ac.currentTime);
+              VRV.innerText = '音量：' + this.value;
             };
 
             // 静音左环绕SL声道

@@ -82,6 +82,18 @@
     button {
       font-size: 16px;
     }
+
+    h4 {
+      padding: 30px 60px;
+      color: red;
+      line-height: 32px;
+      font-weight: normal;
+    }
+
+    h2 {
+      padding: 0 60px;
+      color: blue;
+    }
   </style>
 </head>
 
@@ -89,7 +101,7 @@
   <h1>Web Audio API examples: AudioWorkletNode() 获取Video/Audio视音频声道(左右声道|多声道)</h1>
   <hr />
 
-  <h3 style="color: red">
+  <h4>
     之前通过createScriptProcessor()来获取视音频声道，由于W3C不再推荐使用该特性。所以在不久的将来也许会从相关的Web标准中移除，也许正准备移除或出于兼容性而保留。<br>
 
     但尽管如此：目前所有现代浏览器包括早期点的浏览器均得到了很好的支持，还没有在哪个浏览器上被正式的移除。<br>
@@ -98,7 +110,9 @@
     ，AudioWorkletNode()在目前看来几乎所有的主流浏览器都支持它，但需要注意的是：它现在还是一项实验性技术。<br>
 
     以上两个API从性能上相比较：AudioWorkletNode() 比 ScriptProcessorNode() 性能要更好些，并且更易于使用，并且它还支持更多个的输入和输出通道。
-  </h3>
+  </h4>
+
+  <h2>注：请在http服务器环境中运行该实例！！</h2>
 
   <section>
     <label>
@@ -225,37 +239,25 @@
             // 监听音频处理器每次处理的样本帧
             processor.port.onmessage = (evt) => {
               if ('peaks' === evt.data.type) {
-                const { input } = evt.data;
+                const [l, r, sl, sr] = evt.data;
 
                 // 声轨1
-                if (volumeNodeL.gain.value) {
-                  const level = countPeakLevel(input[0]);
-                  if (level) {
-                    L.value = level;
-                    TBLV.innerText = '峰值电平：' + L.value.toFixed(2);
-                  }
+                if (volumeNodeL.gain.value && l) {
+                  L.value = countPeakLevel(l);
+                  TBLV.innerText = '峰值电平：' + L.value.toFixed(2);
                 }
                 // 声轨2
-                if (volumeNodeR.gain.value) {
-                  const level = countPeakLevel(input[1]);
-                  if (level) {
-                    R.value = level;
-                    TBRV.innerText = '峰值电平：' + R.value.toFixed(2);
-                  }
+                if (volumeNodeR.gain.value && r) {
+                  R.value = countPeakLevel(r);
+                  TBRV.innerText = '峰值电平：' + R.value.toFixed(2);
                 }
                 // 声轨3
-                if (volumeNodeSL.gain.value) {
-                  const level = countPeakLevel(input[2]);
-                  if (level) {
-                    SL.value = level;
-                  }
+                if (volumeNodeSL.gain.value && sl) {
+                  SL.value = countPeakLevel(sl);
                 }
                 // 声轨4
-                if (volumeNodeSR.gain.value) {
-                  const level = countPeakLevel(input[3]);
-                  if (level) {
-                    SR.value = level;
-                  }
+                if (volumeNodeSR.gain.value && sr) {
+                  SR.value = countPeakLevel(sr);
                 }
 
               }
