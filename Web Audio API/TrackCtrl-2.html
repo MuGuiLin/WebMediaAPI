@@ -241,7 +241,10 @@
 
         // 监听音频处理器每次处理的样本帧
         processor.port.onmessage = (evt) => {
-          const [l, r, sl, sr] = evt.data;
+
+          //注： 声轨（声道）的数量是 取决于 当前播放的视音频本身有的声轨（声道）！！
+          
+          const [l, r, sl, sr, ...more] = evt.data;
 
           // 声轨1
           if (volumeNodeL.gain.value && l) {
@@ -261,6 +264,8 @@
           if (volumeNodeSR.gain.value && sr) {
             SR.value = countPeakLevel(sr);
           }
+          // 其他更多声轨
+          console.log('其他更多声道样本帧数据：', more);
         };
 
         processor.port.onmessageerror = (err) => {
