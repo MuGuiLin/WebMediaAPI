@@ -1,15 +1,23 @@
-// processor.js
+function countMaxValue(input) {
+    return input.map(channel => {
+        let max = 0;
+        for (let s = 0; s < channel.length; s++) {
+            const sAbs = Math.abs(channel[s]);
+            if (sAbs > max) max = sAbs;
+        }
+        return max;
+    });
+};
+
 class RandomNoiseProcessor extends AudioWorkletProcessor {
     process(inputs, outputs, parameters) {
-        console.log("Random Noise Processor", inputs);
-        const output = outputs[0];
-        output.forEach((channel) => {
-            for (let i = 0; i < channel.length; i++) {
-                channel[i] = Math.random() * 2 - 1;
-            }
-        });
+        this.port.postMessage(countMaxValue(inputs[0]));
         return true;
     }
-}
+};
 
-registerProcessor("random-noise-processor", RandomNoiseProcessor);
+try {
+    registerProcessor("mu-processor", RandomNoiseProcessor);
+} catch (error) {
+    console.log('无法注册峰值样本处理器。这可能意味着它已经注册了。', error);
+}

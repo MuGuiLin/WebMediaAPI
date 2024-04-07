@@ -1,281 +1,291 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script async src="//hm.baidu.com/hm.js?f79493fc378b2235419a88daa91d5f6d"></script>
-    <title>Web Audio API examples: MediaElementAudioSource()</title>
-    <style>
-      body {
-        padding: 100px;
-      }
-      audio,
-      input[type="file"] {
-        width: 671px;
-      }
-      input[type="range"] {
-        transform: rotate(-90deg);
-      }
-      button {
-        font-size: 16px;
-      }
-    </style>
-  </head>
 
-  <body>
-    <h1>Web Audio API examples: createScriptProcessor()</h1>
-    <hr />
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script async src="//hm.baidu.com/hm.js?f79493fc378b2235419a88daa91d5f6d"></script>
+  <title>Web Audio API examples: MediaElementAudioSource()</title>
+  <style>
+    body {
+      padding: 100px;
+    }
 
-    <h3 style="color: blue">
-      超高清【8K UHD (7680 × 4320)】， 全景声(WANOS)【 (128个声道 和
-      128个声音对象)编码技术】
-    </h3>
+    audio,
+    input[type="file"] {
+      width: 671px;
+    }
 
-    <br />
-    <br />
+    input[type="range"] {
+      transform: rotate(-90deg);
+    }
 
-    <button type="button" id="LBTN">左声道（L）</button>
-    <input type="range" id="L" min="-60" max="0" style="margin-left: 13px" />
+    button {
+      font-size: 16px;
+    }
+  </style>
+</head>
 
-    添加本地音视频：<input id="file" type="file" />
+<body>
+  <h1>Web Audio API examples: createScriptProcessor()</h1>
+  <hr />
 
-    <input type="range" id="R" min="0" max="100" />
-    <button type="button" id="RBTN">右声道（R）</button>
+  <h3 style="color: blue">
+    超高清【8K UHD (7680 × 4320)】， 全景声(WANOS)【 (128个声道 和
+    128个声音对象)编码技术】
+  </h3>
 
-    <br /><br /><br />
-    <br /><br /><br />
+  <br />
+  <br />
 
-    <div>
-      <button type="button" id="SLBTN">左环绕（SL）</button>
-      <input type="range" id="SL" min="0" max="100" />
+  <button type="button" id="LBTN">左声道（L）</button>
+  <input type="range" id="L" min="-60" max="0" style="margin-left: 13px" />
 
-      <video mute loop controls width="800">
-        <source src="./media/Project DT-5.1.mp4" type="video/mp4" />
-        <p>This demo needs a browser supporting the &lt;video&gt; element.</p>
-      </video>
+  添加本地音视频：<input id="file" type="file" />
 
-      <input type="range" id="SR" min="0" max="100" />
-      <button type="button" id="SRBTN">右环绕（SR）</button>
-    </div>
+  <input type="range" id="R" min="0" max="100" />
+  <button type="button" id="RBTN">右声道（R）</button>
 
-    <script>
-      (function (global, factory) {
-        "use strict";
-        let isInit = true;
-        document.onclick = function () {
-          if (isInit) {
-            isInit = false;
-            factory((floatVal) =>(Math.log(10) / Math.log(floatVal)) * 20);
-            document.onclick = null;
-          }
-        };
-      })(globalThis, function (getDbFromFloatLog) {
-        const ac = new (window.AudioContext || window.webkitAudioContext)();
-        const audio = document.querySelector("video");
-        audio.crossOrigin = "anonymous"; // cross-origin - if file is stored on remote server 跨原点-如果文件存储在远程服务器上
+  <br /><br /><br />
+  <br /><br /><br />
 
-        // let source;
-        // audio.addEventListener(
-        //   "canplaythrough", // loadedmetadata
-        //   function () {
-        //     source = ac.createMediaElementSource(audio);
-        //     source.connect(processor);
-        //     source.connect(ac.destination);
-        //     processor.connect(ac.destination);
-        //   }, false );
-      
-        const audioSource = ac.createMediaElementSource(audio);
-        const channelCount = 4 || audioSource.channelCount;
-        const processor = ac.createScriptProcessor(2048, channelCount, channelCount);
-        audioSource.connect(processor);
-        // audioSource.connect(ac.destination);
-        processor.connect(ac.destination);
+  <div>
+    <button type="button" id="SLBTN">左环绕（SL）</button>
+    <input type="range" id="SL" min="0" max="100" />
 
-        // 通道分配器
-        const splitterNode = new ChannelSplitterNode(ac, {
-          numberOfOutputs: channelCount,
-        });
+    <video mute loop controls width="800">
+      <source src="./media/Project DT-5.1.mp4" type="video/mp4" />
+      <p>This demo needs a browser supporting the &lt;video&gt; element.</p>
+    </video>
 
-        // 通道合并器
-        const mergerNode = new ChannelMergerNode(ac, {
-          numberOfInputs: channelCount,
-        });
+    <input type="range" id="SR" min="0" max="100" />
+    <button type="button" id="SRBTN">右环绕（SR）</button>
+  </div>
 
-        // 通道控制器
-        const volumeNodeL = new GainNode(ac, { gain: 1 });
-        const volumeNodeR = new GainNode(ac, { gain: 1 });
-        const volumeNodeSL = new GainNode(ac, { gain: 1 });
-        const volumeNodeSR = new GainNode(ac, { gain: 1 });
-
-        audioSource.connect(splitterNode);
-
-        splitterNode.connect(volumeNodeL, 0); // connect OUTPUT channel 0
-        splitterNode.connect(volumeNodeR, 1); // connect OUTPUT channel 1
-        splitterNode.connect(volumeNodeSL, 2); // connect OUTPUT channel 2
-        splitterNode.connect(volumeNodeSR, 3); // connect OUTPUT channel 3
-
-        volumeNodeL.connect(mergerNode, 0, 0); // connect INPUT channel 0
-        volumeNodeR.connect(mergerNode, 0, 1); // connect INPUT channel 1
-        volumeNodeSL.connect(mergerNode, 0, 2); // connect INPUT channel 2
-        volumeNodeSR.connect(mergerNode, 0, 3); // connect INPUT channel 3
-
-        mergerNode.connect(ac.destination);
-
-        // 循环PCM数据并计算平均值，给定2048样本缓冲区的体积
-        processor.onaudioprocess = function (evt) {
-          // console.log("音频通道数量：", evt.inputBuffer.numberOfChannels);
-          {
-            let input = evt.inputBuffer.getChannelData(0),
-              len = input.length,
-              i = 0;
-            while (i < len) {
-              L.value = getDbFromFloatLog(input[i++]);
-            }
-            // let input = evt.inputBuffer.getChannelData(0);
-            // L.value = getDbFromFloatLog(input[0]);
-            
-          }
-
-          {
-            let input = evt.inputBuffer.getChannelData(1),
-              len = input.length,
-              total = (i = 0),
-              rms;
-            while (i < len) {
-              total += Math.abs(input[i++]);
-            }
-            rms = Math.sqrt(total / len);
-
-            if (volumeNodeR.gain.value) {
-              R.value = rms * 200;
-            }
-          }
-
-          {
-            let input = evt.inputBuffer.getChannelData(2),
-              len = input.length,
-              total = (i = 0),
-              rms;
-            while (i < len) {
-              total += Math.abs(input[i++]);
-            }
-            rms = Math.sqrt(total / len);
-
-            if (volumeNodeSL.gain.value) {
-              SL.value = rms * 200;
-            }
-          }
-
-          {
-            let input = evt.inputBuffer.getChannelData(3),
-              len = input.length,
-              total = (i = 0),
-              rms;
-            while (i < len) {
-              total += Math.abs(input[i++]);
-            }
-            rms = Math.sqrt(total / len);
-
-            if (volumeNodeSR.gain.value) {
-              SR.value = rms * 200;
-            }
-          }
-        };
-
-        /*
-          缓存区触发事件，连接了createScriptProcessor这个AudioNode就需要在onaudioprocess中，
-          把输入帧的数据，连接到输出帧，扬声器才有声音
-       
-        processor.onaudioprocess = function (e) {
-          let inputBuffer = e.inputBuffer, //输入帧数据，AudioBuffer类型
-            outputBuffer = e.outputBuffer; //输出帧数据， AudioBuffer类型
-
-          //第一种方式
-          //将inputBuffer第0个通道的数据，复制到outputBuffer的第0个通道，偏移0个字节
-          outputBuffer.copyToChannel(inputBuffer.getChannelData(0), 0, 0);
-          //将inputBuffer第1个通道的数据，复制到outputBuffer的第1个通道，偏移0个字节
-          outputBuffer.copyToChannel(inputBuffer.getChannelData(1), 1, 0);
-
-          //第二中方式用循环
-          for (var channel = 0; channel < outputBuffer.numberOfChannels; channel++) {
-            let inputData = inputBuffer.getChannelData(channel),
-              outputData = outputBuffer.getChannelData(channel);
-            for (var sample = 0; sample < inputBuffer.length; sample++) {
-              outputData[sample] = inputData[sample];
-            }
-          }
+  <script>
+    (function (global, factory) {
+      "use strict";
+      let isInit = true;
+      document.onclick = function () {
+        if (isInit) {
+          isInit = false;
+          function getBaseLog(x, y) {
+            return Math.log(y) / Math.log(x);
+          };
+          // 计算音频Peak Level
+          factory((float) => getBaseLog(10, float) * 20);
+          document.onclick = null;
         }
-        */
+      };
+    })(globalThis, function (countPeakLevel) {
+      const ac = new (window.AudioContext || window.webkitAudioContext)();
+      const audio = document.querySelector("video");
+      audio.crossOrigin = "anonymous"; // cross-origin - if file is stored on remote server 跨原点-如果文件存储在远程服务器上
+
+      // let source;
+      // audio.addEventListener(
+      //   "canplaythrough", // loadedmetadata
+      //   function () {
+      //     source = ac.createMediaElementSource(audio);
+      //     source.connect(processor);
+      //     source.connect(ac.destination);
+      //     processor.connect(ac.destination);
+      //   }, false );
+
+      const audioSource = ac.createMediaElementSource(audio);
+      const channelCount = 4 || audioSource.channelCount;
+      const processor = ac.createScriptProcessor(2048, channelCount, channelCount);
+      audioSource.connect(processor);
+      // audioSource.connect(ac.destination);
+      processor.connect(ac.destination);
+
+      // 通道分配器
+      const splitterNode = new ChannelSplitterNode(ac, {
+        numberOfOutputs: channelCount,
+      });
+
+      // 通道合并器
+      const mergerNode = new ChannelMergerNode(ac, {
+        numberOfInputs: channelCount,
+      });
+
+      // 通道控制器
+      const volumeNodeL = new GainNode(ac, { gain: 1 });
+      const volumeNodeR = new GainNode(ac, { gain: 1 });
+      const volumeNodeSL = new GainNode(ac, { gain: 1 });
+      const volumeNodeSR = new GainNode(ac, { gain: 1 });
+
+      audioSource.connect(splitterNode);
+
+      splitterNode.connect(volumeNodeL, 0); // connect OUTPUT channel 0
+      splitterNode.connect(volumeNodeR, 1); // connect OUTPUT channel 1
+      splitterNode.connect(volumeNodeSL, 2); // connect OUTPUT channel 2
+      splitterNode.connect(volumeNodeSR, 3); // connect OUTPUT channel 3
+
+      volumeNodeL.connect(mergerNode, 0, 0); // connect INPUT channel 0
+      volumeNodeR.connect(mergerNode, 0, 1); // connect INPUT channel 1
+      volumeNodeSL.connect(mergerNode, 0, 2); // connect INPUT channel 2
+      volumeNodeSR.connect(mergerNode, 0, 3); // connect INPUT channel 3
+
+      mergerNode.connect(ac.destination);
+
+      // 循环PCM数据并计算平均值，给定2048样本缓冲区的体积
+      processor.onaudioprocess = function (evt) {
+        // console.log("音频通道数量：", evt.inputBuffer.numberOfChannels);
         {
-          let isPlaying;
-          function playPause() {
-            // check if context is in suspended state (autoplay policy)
-            if (ac.state === "suspended") {
-              ac.resume();
-            }
-
-            isPlaying = !isPlaying;
-            if (isPlaying) {
-              // gainNode.gain.exponentialRampToValueAtTime(1, 1); // 在1秒的时间内指数增长到1，实现一个播放渐入效果
-              audio.play();
-            } else {
-              audio.pause();
-            }
+          let input = evt.inputBuffer.getChannelData(0),
+            len = input.length,
+            i = 0;
+          while (i < len) {
+            L.value = countPeakLevel(input[i++]);
           }
 
-          LBTN.onclick = function () {
-            volumeNodeL.gain.value = Number(!volumeNodeL.gain.value);
-            console.log(volumeNodeL.gain.value);
-          };
+          // L.value = countPeakLevel(input[0]);
+          // L.value = countPeakLevel(Math.max(...input));
 
-          RBTN.onclick = function () {
-            volumeNodeR.gain.value = Number(!volumeNodeR.gain.value);
-            console.log(volumeNodeR.gain.value);
-          };
+        };
 
-          SLBTN.onclick = function () {
-            volumeNodeSL.gain.value = Number(!volumeNodeSL.gain.value);
-            console.log(volumeNodeSL.gain.value);
-          };
+        {
+          let input = evt.inputBuffer.getChannelData(1),
+            len = input.length,
+            total = (i = 0),
+            rms;
+          while (i < len) {
+            total += Math.abs(input[i++]);
+          }
+          rms = Math.sqrt(total / len);
 
-          SRBTN.onclick = function () {
-            volumeNodeSR.gain.value = Number(!volumeNodeSR.gain.value);
-            console.log(volumeNodeSR.gain.value);
-          };
+          if (volumeNodeR.gain.value) {
+            R.value = rms * 200;
+          }
+        };
+
+        {
+          let input = evt.inputBuffer.getChannelData(2),
+            len = input.length,
+            total = (i = 0),
+            rms;
+          while (i < len) {
+            total += Math.abs(input[i++]);
+          }
+          rms = Math.sqrt(total / len);
+
+          if (volumeNodeSL.gain.value) {
+            SL.value = rms * 200;
+          }
+        };
+
+        {
+          let input = evt.inputBuffer.getChannelData(3),
+            len = input.length,
+            total = (i = 0),
+            rms;
+          while (i < len) {
+            total += Math.abs(input[i++]);
+          }
+          rms = Math.sqrt(total / len);
+
+          if (volumeNodeSR.gain.value) {
+            SR.value = rms * 200;
+          }
+        };
+      };
+
+      /*
+        缓存区触发事件，连接了createScriptProcessor这个AudioNode就需要在onaudioprocess中，
+        把输入帧的数据，连接到输出帧，扬声器才有声音
+     
+      processor.onaudioprocess = function (e) {
+        let inputBuffer = e.inputBuffer, //输入帧数据，AudioBuffer类型
+          outputBuffer = e.outputBuffer; //输出帧数据， AudioBuffer类型
+
+        //第一种方式
+        //将inputBuffer第0个通道的数据，复制到outputBuffer的第0个通道，偏移0个字节
+        outputBuffer.copyToChannel(inputBuffer.getChannelData(0), 0, 0);
+        //将inputBuffer第1个通道的数据，复制到outputBuffer的第1个通道，偏移0个字节
+        outputBuffer.copyToChannel(inputBuffer.getChannelData(1), 1, 0);
+
+        //第二中方式用循环
+        for (var channel = 0; channel < outputBuffer.numberOfChannels; channel++) {
+          let inputData = inputBuffer.getChannelData(channel),
+            outputData = outputBuffer.getChannelData(channel);
+          for (var sample = 0; sample < inputBuffer.length; sample++) {
+            outputData[sample] = inputData[sample];
+          }
+        }
+      }
+      */
+      {
+        let isPlaying;
+        function playPause() {
+          // check if context is in suspended state (autoplay policy)
+          if (ac.state === "suspended") {
+            ac.resume();
+          }
+
+          isPlaying = !isPlaying;
+          if (isPlaying) {
+            // gainNode.gain.exponentialRampToValueAtTime(1, 1); // 在1秒的时间内指数增长到1，实现一个播放渐入效果
+            audio.play();
+          } else {
+            audio.pause();
+          }
         }
 
-        function hasAudio (video) {
-          return video.mozHasAudio ||
+        LBTN.onclick = function () {
+          volumeNodeL.gain.value = Number(!volumeNodeL.gain.value);
+          console.log(volumeNodeL.gain.value);
+        };
+
+        RBTN.onclick = function () {
+          volumeNodeR.gain.value = Number(!volumeNodeR.gain.value);
+          console.log(volumeNodeR.gain.value);
+        };
+
+        SLBTN.onclick = function () {
+          volumeNodeSL.gain.value = Number(!volumeNodeSL.gain.value);
+          console.log(volumeNodeSL.gain.value);
+        };
+
+        SRBTN.onclick = function () {
+          volumeNodeSR.gain.value = Number(!volumeNodeSR.gain.value);
+          console.log(volumeNodeSR.gain.value);
+        };
+      }
+
+      function hasAudio(video) {
+        return video.mozHasAudio ||
           Boolean(video.webkitAudioDecodedByteCount) ||
           Boolean(video.audioTracks && video.audioTracks.length);
+      }
+
+      audio.addEventListener("loadeddata", function () {
+        console.dir(this);
+        console.log(hasAudio(this));
+        if (this.webkitAudioDecodedByteCount) {
+          console.log(this.webkitAudioDecodedByteCount);
         }
-
-        audio.addEventListener("loadeddata", function() {
-          console.dir(this);
-          console.log(hasAudio(this));
-          if(this.webkitAudioDecodedByteCount){
-            console.log(this.webkitAudioDecodedByteCount);
-          }
-          else if ('WebkitAppearance' in document.documentElement.style){
-            console.log(this.audioTracks, this.audioTracks?.length);
-          }
-          else if (this.mozHasAudio){
-            console.log(this.mozHasAudio, this.mozHasAudio?.length);
-           }
-        });
-
-        file.addEventListener("change", function () {
-          const file = this.files[0];
-          console.log(file);
-          if ("video/mp4".startsWith("video")) {
-            // video.src = window.URL.createObjectURL(file);
-            audio.src = window.URL.createObjectURL(file);
-          } else {
-            audio.src = window.URL.createObjectURL(file);
-          }
-        });
+        else if ('WebkitAppearance' in document.documentElement.style) {
+          console.log(this.audioTracks, this.audioTracks?.length);
+        }
+        else if (this.mozHasAudio) {
+          console.log(this.mozHasAudio, this.mozHasAudio?.length);
+        }
       });
-    </script>
-  </body>
+
+      file.addEventListener("change", function () {
+        const file = this.files[0];
+        console.log(file);
+        if ("video/mp4".startsWith("video")) {
+          // video.src = window.URL.createObjectURL(file);
+          audio.src = window.URL.createObjectURL(file);
+        } else {
+          audio.src = window.URL.createObjectURL(file);
+        }
+      });
+    });
+  </script>
+</body>
+
 </html>

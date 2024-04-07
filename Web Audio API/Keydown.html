@@ -1,78 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script async src="//hm.baidu.com/hm.js?f79493fc378b2235419a88daa91d5f6d"></script>
-    <title>Keydown</title>
-    <style>
-      body {
-        padding: 100px;
-      }
-      div {
-        padding: 30px;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Web Audio AudioBuffer API</h1>
-    <hr />
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script async src="//hm.baidu.com/hm.js?f79493fc378b2235419a88daa91d5f6d"></script>
+  <title>Keydown</title>
+  <style>
+    body {
+      padding: 100px;
+    }
+
+    div {
+      padding: 30px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Web Audio AudioBuffer API</h1>
+  <hr />
+  <p>
+    <b>AudioBuffer API：</b>
+    <br />是表示存在存储器里的短音频资产，利用AudioContext.decodeAudioData()方法从音频文件构建，或者利用
+    AudioContext.createBuffer()构建于原数据。一旦将其放入AudioBuffer，可以传递到一个
+    AudioBufferSourceNode进行播放。
+  </p>
+  <p>
+    <b>缓存区（buffer）包含以下数据：</b>
+    <br />不间断的IEEE75432位线性PCM，从-1到1的范围额定，就是说，32位的浮点缓存区的每个样本在-1.0到1.0之间。如果AudioBuffer有不同的频道，他们通常被曝存在独立的缓存区。
+  </p>
+  <div>
     <p>
-      <b>AudioBuffer API：</b>
-      <br />是表示存在存储器里的短音频资产，利用AudioContext.decodeAudioData()方法从音频文件构建，或者利用
-      AudioContext.createBuffer()构建于原数据。一旦将其放入AudioBuffer，可以传递到一个
-      AudioBufferSourceNode进行播放。
+      本质并不是从键盘获取，而是通过键盘获取到我们设定的频率值，然后通过程序创建一段音频。如下实例：该例子中可以按键盘上中间的一排按键（A到K）来发出不同的声音。
     </p>
-    <p>
-      <b>缓存区（buffer）包含以下数据：</b>
-      <br />不间断的IEEE75432位线性PCM，从-1到1的范围额定，就是说，32位的浮点缓存区的每个样本在-1.0到1.0之间。如果AudioBuffer有不同的频道，他们通常被曝存在独立的缓存区。
-    </p>
-    <div>
-      <p>
-        本质并不是从键盘获取，而是通过键盘获取到我们设定的频率值，然后通过程序创建一段音频。如下实例：该例子中可以按键盘上中间的一排按键（A到K）来发出不同的声音。
-      </p>
-      <img src="./img/波形类型.png" alt="波形类型" />
-      <br />
-      <br />
-      波形声调基本类型：<select id="select">
-        <option value="sine">sine - 正弦波</option>
-        <option value="square">square - 方波</option>
-        <option value="sawtooth">sawtooth - 锯齿波</option>
-        <option value="triangle">triangle - 三角波</option>
-      </select>
-      <h3>按下：A，S，D，F，G，H，J，K 键试试（还可以尝试同时按下多个）</h3>
-      <h1 id="h1"></h1>
-    </div>
+    <img src="./img/波形类型.png" alt="波形类型" />
+    <br />
+    <br />
+    波形声调基本类型：<select id="select">
+      <option value="sine">sine - 正弦波</option>
+      <option value="square">square - 方波</option>
+      <option value="sawtooth">sawtooth - 锯齿波</option>
+      <option value="triangle">triangle - 三角波</option>
+    </select>
+    <h3>按下：A，S，D，F，G，H，J，K 键试试（还可以尝试同时按下多个）</h3>
+    <h1 id="h1"></h1>
+  </div>
 
-    <hr />
+  <hr />
 
-    <div>
-      <p>在以下输入框中输入不同的数值以发出不同的声音。</p>
-      <input
-        type="number"
-        id="frequency"
-        min="1"
-        value="256"
-        placeholder="请输入音频率（数字类型）"
-      />
-      <button id="play">播放 / 暂停-音频率</button>
-    </div>
+  <div>
+    <p>在以下输入框中输入不同的数值以发出不同的声音。</p>
+    <input type="number" id="frequency" min="1" value="256" placeholder="请输入音频率（数字类型）" />
+    <button id="play">播放 / 暂停-音频率</button>
+  </div>
 
-    <hr />
+  <hr />
 
-    <div>
-      <button id="whiteNoiseBtn" style="font-size: 18px">
-        Make white noise 点击发出白噪音
-      </button>
+  <div>
+    <button id="whiteNoiseBtn" style="font-size: 18px">
+      Make white noise 点击发出白噪音
+    </button>
 
-      <button id="whiteNoiseBtn2" style="font-size: 18px">
-        Make white noise 点击发出白噪音2
-      </button>
-    </div>
+    <button id="whiteNoiseBtn2" style="font-size: 18px">
+      Make white noise 点击发出白噪音2
+    </button>
+  </div>
 
-    <script>
-     ; (function (global, factory) {
+  <script>
+    ; (function (global, factory) {
       'use strict';
       let isInit = true;
       document.onclick = function () {
@@ -117,9 +114,8 @@
 
         // 键盘按下时将相应频率的Oscillator连接到输出源上
         addEventListener("keydown", function (e) {
-          h1.innerText = `按键值：${e.keyCode}，音频率：${
-            temp[e.keyCode] || "---"
-          }`;
+          h1.innerText = `按键值：${e.keyCode}，音频率：${temp[e.keyCode] || "---"
+            }`;
           if ((e = audio[e.keyCode])) {
             e.connect(ac.destination);
           }
@@ -260,6 +256,7 @@
         };
       }
     }));
-    </script>
-  </body>
+  </script>
+</body>
+
 </html>
