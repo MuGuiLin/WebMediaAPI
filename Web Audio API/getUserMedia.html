@@ -27,6 +27,9 @@
   <h1>Web getUserMedia API 获取麦克风 音频流</h1>
   <hr />
 
+  <button id="start">开始录音</button>
+  <button id="stop">停止录音</button>
+
   <div>
     <b>左声道（L）</b>
     <meter id="L" min="-60" low="-20" high="-6" max="3" value="-60" style="margin-left: 13px"></meter>
@@ -71,6 +74,7 @@
       };
     })(globalThis, function () {
       const ac = new (window.AudioContext || window.webkitAudioContext)();
+      let audioTracks = null;
 
       ac.addEventListener("sinkchange", () => {
         // as.state = suspended：暂停、running：正在运行、closed：已关闭
@@ -124,7 +128,7 @@
       }
 
       function getMediaSuccess(stream) {
-        const audioTracks = stream.getAudioTracks();
+        audioTracks = stream.getAudioTracks();
         for (let i = 0; i < audioTracks.length; i++) {
           const track = audioTracks[i];
           track.enabled = true;
@@ -177,6 +181,8 @@
       }
 
       function getMediaSuccess2(stream) {
+        audioTracks = stream.getAudioTracks();
+
         // 创建一个新的MediaStreamAudioSourceNode 对象，使来自MediaStream的音频可以被播放和操作
         const mediaSource = ac.createMediaStreamSource(stream);
         console.log(mediaSource);
@@ -293,67 +299,73 @@
         console.log("可输出音频设备：", res);
       });
 
-      // 获取浏览器录音权限
-      navigator.getUserMedia =
-        navigator.getUserMedia ||
-        navigator.webkitGetUserMedia ||
-        navigator.mozGetUserMedia ||
-        navigator.msGetUserMedia;
 
-      /*
-      //简单兼容
-      let getUserMedia =
-        navigator.mediaDevices.getUserMedia || navigator.getUserMedia;
-      //获取麦克风，摄像头权限
-      getUserMedia({ audio: true, video: true }).then((stream) => {
-        let audioCtx = new AudioContext(),
-          //以流媒体作为音频源
-          source = audioCtx.createMediaStreamSource(stream);
-        //将音频源直接连接到输出设备
-        source.connect(audioCtx.destination);
-      });
-      */
-      // if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      //   navigator.mediaDevices.getUserMedia({
-      //       audio: true,
-      //       video: false, // 注：如果没有摄像头请设为false
-      //     })
-      //     .then((stream) => {
-      //       getMediaSuccess(stream);
-      //     })
-      //     .catch((e) => {
-      //       console.error(e);
-      //       alert("对不起：录音权限获取失败!");
-      //     });
-      // } else
-      if (navigator.getUserMedia) {
-        navigator.getUserMedia(
-          {
-            audio: true,
-            video: false, // 注：如果没有摄像头请设为false
-          },
-          (stream) => {
-            // getMediaSuccess(stream);
-            getMediaSuccess2(stream);
-          },
-          (err) => {
-            console.error(err);
-            alert("对不起：录音权限获取失败!");
-          }
-        );
-      } else {
-        if (
-          navigator.userAgent.toLowerCase().match(/chrome/) &&
-          location.origin.indexOf("https://") < 0
-        ) {
-          console.error(
-            "获取浏览器录音功能，因安全性问题，需要在localhost 或 https 下才能获取权限！"
+      function getUserMedia() {
+        // 获取浏览器录音权限
+        navigator.getUserMedia =
+          navigator.getUserMedia ||
+          navigator.webkitGetUserMedia ||
+          navigator.mozGetUserMedia ||
+          navigator.msGetUserMedia;
+
+        // if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        //   navigator.mediaDevices.getUserMedia({
+        //       audio: true,
+        //       video: false, // 注：如果没有摄像头请设为false
+        //     })
+        //     .then((stream) => {
+        //       getMediaSuccess(stream);
+        //     })
+        //     .catch((e) => {
+        //       console.error(e);
+        //       alert("对不起：录音权限获取失败!");
+        //     });
+        // } else 
+        if (navigator.getUserMedia) {
+          navigator.getUserMedia(
+            {
+              audio: true,
+              video: false, // 注：如果没有摄像头请设为false
+            },
+            (stream) => {
+              // getMediaSuccess(stream);
+              getMediaSuccess2(stream);
+            },
+            (err) => {
+              console.error(err);
+              alert("对不起：录音权限获取失败!");
+            }
           );
         } else {
-          alert("对不起：未识别到录音设备!");
+          if (
+            navigator.userAgent.toLowerCase().match(/chrome/) &&
+            location.origin.indexOf("https://") < 0
+          ) {
+            console.error(
+              "获取浏览器录音功能，因安全性问题，需要在localhost 或 https 下才能获取权限！"
+            );
+          } else {
+            alert("对不起：未识别到录音设备!");
+          }
+          ac && ac.close();
         }
-        ac && ac.close();
       }
+
+      document.querySelector('#start').onclick = function () {
+        getUserMedia()
+        if (ac && ac.state === "suspended") {
+          ac.resume();
+        }
+      };
+
+      document.querySelector('#stop').onclick = function () {
+        if (ac && ac.state === "running") {
+          ac.suspend();
+        }
+        audioTracks.forEach((track) => {
+          track.stop();
+        });
+      };
     });
 
     {
