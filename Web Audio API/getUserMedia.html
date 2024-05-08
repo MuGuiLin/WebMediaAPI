@@ -318,7 +318,7 @@
         //     })
         //     .catch((e) => {
         //       console.error(e);
-        //       alert("对不起：录音权限获取失败!");
+        //       alert("对不起：录音权限获取失败（1、请检查浏览器(用户)是否开启 或 阻止了录音权限，2、请确保当前域名是https协议，3、请检查是否有麦克风等音频硬件设备!");
         //     });
         // } else 
         if (navigator.getUserMedia) {
@@ -329,8 +329,8 @@
             },
             (stream) => {
               console.log("stream:", stream);
-              getMediaSuccess(stream);
-              // getMediaSuccess2(stream);
+              // getMediaSuccess(stream);
+              getMediaSuccess2(stream);
             },
             (err) => {
               console.error(err);
