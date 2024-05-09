@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="//hm.baidu.com/hm.js?f79493fc378b2235419a88daa91d5f6d"></script>
+  <!-- <script src="//hm.baidu.com/hm.js?f79493fc378b2235419a88daa91d5f6d"></script> -->
   <title>Web getUserMedia API 获取麦克风 音频流</title>
   <style>
     body {
@@ -86,7 +86,7 @@
         }
       });
 
-       // 计算音频log对数
+      // 计算音频log对数
       function getBaseLog(x, y) {
         return Math.log(y) / Math.log(x);
       };
@@ -205,10 +205,10 @@
           const [l, r, sl, sr] = countMaxValue(evt.inputBuffer);
           L.value = countPeakLevel(l);
           LV.innerText = L.value.toFixed(2);
-        
+
           R.value = countPeakLevel(r);
           RV.innerText = R.value.toFixed(2);
-          
+
 
           /*
           {
@@ -295,56 +295,51 @@
         animate();
       }
 
-      navigator.mediaDevices.enumerateDevices().then((res) => {
-        console.log("可输出音频设备：", res);
-      });
+      // 获取当前可用的相机(摄像头)和麦克风设备。
+      function getMediaDevices() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+          return console.log("不支持 enumerateDevices()， ");
+        }
+        navigator.mediaDevices.enumerateDevices().then(function (devices) {
+          devices.forEach(function (device) {
+            console.log('当前可用的媒体设备如下: ', device);
+            // console.log(device.kind + ": " + device.label + " id = " + device.deviceId);
+          });
+        }).catch(function (err) {
+          console.error(err.name + ": " + err.message);
+        });
+      };
+      getMediaDevices();
 
 
+      // 获取浏览器录音权限
       function getUserMedia() {
-        // 获取浏览器录音权限
-        navigator.getUserMedia =
-          navigator.getUserMedia ||
-          navigator.webkitGetUserMedia ||
-          navigator.mozGetUserMedia ||
-          navigator.msGetUserMedia;
-
+        navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
         // if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         //   navigator.mediaDevices.getUserMedia({
-        //       audio: true,
-        //       video: false, // 注：如果没有摄像头请设为false
-        //     })
-        //     .then((stream) => {
-        //       getMediaSuccess(stream);
-        //     })
-        //     .catch((e) => {
-        //       console.error(e);
-        //       alert("对不起：录音权限获取失败（1、请检查浏览器(用户)是否开启 或 阻止了录音权限，2、请确保当前域名是https协议，3、请检查是否有麦克风等音频硬件设备!");
-        //     });
-        // } else 
-        if (navigator.getUserMedia) {
-          navigator.getUserMedia(
-            {
-              audio: true,
-              video: false, // 注：如果没有摄像头请设为false
-            },
-            (stream) => {
-              console.log("stream:", stream);
-              // getMediaSuccess(stream);
-              getMediaSuccess2(stream);
-            },
-            (err) => {
-              console.error(err);
-              alert("对不起：录音权限获取失败（1、请检查浏览器(用户)是否开启 或 阻止了录音权限，2、请确保当前域名是https协议，3、请检查是否有麦克风等音频硬件设备!");
-            }
+        //     audio: true,
+        //     video: false, // 注：如果没有摄像头请设为false
+        //   }).then((stream) => {
+        //     getMediaSuccess(stream);
+        //   }).catch((err) => {
+        //     console.error('对不起：录音权限获取失败（1、请检查浏览器(用户)是否开启 或 阻止了录音权限、硬件设备：', err);
+        //   });
+        // } else
+         if (navigator.getUserMedia) {
+          navigator.getUserMedia({
+            audio: false,
+            video: true, // 注：如果没有摄像头请设为false
+          }, (stream) => {
+            console.log("stream:", stream);
+            // getMediaSuccess(stream);
+            getMediaSuccess2(stream);
+          }, (err) => {
+            console.error('对不起：录音权限获取失败（1、请检查浏览器(用户)是否开启 或 阻止了录音权限、硬件设备：', err);
+          }
           );
         } else {
-          if (
-            navigator.userAgent.toLowerCase().match(/chrome/) &&
-            location.origin.indexOf("https://") < 0
-          ) {
-            console.error(
-              "获取浏览器录音功能，因安全性问题，需要在localhost 或 https 下才能获取权限！"
-            );
+          if (0 > location.origin.indexOf("https://")) {
+            console.error("获取浏览器录音功能，因安全性问题，需要在localhost 或 https 下才能获取权限！");
           } else {
             alert("对不起：未识别到录音设备!");
           }
