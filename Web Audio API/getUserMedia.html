@@ -315,19 +315,18 @@
       // 获取浏览器录音权限
       function getUserMedia() {
         navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
-        // if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        //   navigator.mediaDevices.getUserMedia({
-        //     audio: true,
-        //     video: false, // 注：如果没有摄像头请设为false
-        //   }).then((stream) => {
-        //     getMediaSuccess(stream);
-        //   }).catch((err) => {
-        //     console.error('对不起：录音权限获取失败（1、请检查浏览器(用户)是否开启 或 阻止了录音权限、硬件设备：', err);
-        //   });
-        // } else
-         if (navigator.getUserMedia) {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: true, // 注：如果没有摄像头请设为false
+          }).then((stream) => {
+            getMediaSuccess(stream);
+          }).catch((err) => {
+            console.error('对不起：录音权限获取失败（1、请检查浏览器(用户)是否开启 或 阻止了录音权限、硬件设备：', err);
+          });
+        } else if (navigator.getUserMedia) {
           navigator.getUserMedia({
-            audio: false,
+            audio: true,
             video: true, // 注：如果没有摄像头请设为false
           }, (stream) => {
             console.log("stream:", stream);

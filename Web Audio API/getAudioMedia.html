@@ -8,14 +8,18 @@
 </head>
 
 <body>
-    <video id="video"></video>
+
     <canvas id="canvas"></canvas>
+    <button onclick="GetUserMedia()">获取浏览器录音权限</button>
+    <button onclick="openAudio()">获取浏览器录音权限</button>
+    <h3 id="h3_device"></h3>
     <script>
-        var video = document.getElementById("video");
-        var canvas = document.querySelector('#canvas');
-        var context = canvas.getContext("2d");
+
+        var h3_device = document.getElementById("h3_device");
+        var message = ''
 
         //访问用户媒体设备的兼容方法
+        //  navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia
         function getUserMedia(constrains, success, error) {
             if (navigator.mediaDevices.getUserMedia) {
                 //最新标准API
@@ -32,34 +36,64 @@
             }
         }
 
-        //成功的回调函数
-        function success(stream) {
-            //兼容webkit内核浏览器
-            var CompatibleURL = window.URL || window.webkitURL;
-            //将视频流设置为video元素的源
-            video.src = CompatibleURL.createObjectURL(stream);   // 此处的代码将会报错  解决的办法是将video的srcObject属性指向stream即可
-            //播放视频
-            video.play();
+        function getMediaDevices() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+                return console.log("不支持 enumerateDevices()， ");
+            }
+
+            navigator.mediaDevices.enumerateDevices().then(function (devices) {
+                message = devices;
+                console.log('当前可用的媒体设备如下: ', devices);
+                devices.forEach(function (device) {
+                    if (device.kind === "audioinput") {
+                        // 音频输入设备
+                        console.log(device.kind + ": " + device.label + " id = " + device.deviceId);
+                    } else if (device.kind === "videoinput") {
+                        // 视频输入设备
+                        console.log(device.kind + ": " + device.label + " id = " + device.deviceId);
+                    }
+                });
+            }).catch(function (err) {
+                message = err
+                console.error(err);
+            }).finally(function () {
+                h3_device.innerHTML = JSON.stringify(message);
+            });
+        };
+        getMediaDevices();
+
+        function GetUserMedia() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+                return console.log("不支持 enumerateDevices()， ");
+            } else {
+                //调用用户媒体设备，访问摄像头
+                getUserMedia({
+                    audio: true,
+                    // video: { width: 480, height: 320 }
+                }, function (stream) {
+                    // 成功的回调函数
+                    h3_device.innerHTML = JSON.stringify(stream);
+                }, function (error) {
+                    console.log("访问用户媒体设备失败：", error);
+                });
+            }
+        }       
+
+        function openAudio() {
+            try {
+                globalThis.navigator.mediaDevices.getUserMedia({
+                    video: true
+                }).then((stream) => {
+                    h3_device.innerHTML = JSON.stringify(stream);
+                }).catch((err) => {
+                    console.log(err);
+                });
+            } catch (error) {
+                console.log(error);
+            }
         }
 
-        //异常的回调函数
-        function error(error) {
-            console.error("访问用户媒体设备失败：", error);
-        }
-        if (navigator.mediaDevices.getUserMedia || navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia) {
-            //调用用户媒体设备，访问摄像头
-            getUserMedia({
-                video: { width: 480, height: 320 }
-            }, success, error);
-        } else {
-            alert("你的浏览器不支持访问用户媒体设备");
-        }
 
-        //注册拍照按钮的单击事件
-        // document.getElementById("capture").addEventListener("click", function () {
-        //     //绘制画面
-        //     context.drawImage(video, 0, 0, 480, 320);
-        // });
     </script>
 </body>
 
