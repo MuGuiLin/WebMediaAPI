@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      video {
+        display: block;
+        width: 600px;
+        height: 400px;
+      }
+      button {
+        margin: 10px;
+        font-size: 20px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div>
+      <video id="video" controls playsinline></video>
+
+      <button onClick="initRecord()">初始化录音</button>
+      <button onClick="startRecord()">开始录音</button>
+      <button onClick="stopRecord()">停止录音</button>
+      <button onClick="destroyRecord()">销毁录音</button>
+      <button onClick="pauseRecord()">暂停录音</button>
+      <button onClick="resumeRecord()">恢复录制</button>
+
+      <h3>文件大小: <b id="fileSize">0.00</b></h3>
+      <video id="video2" controls playsinline></video>
+    </div>
+
+    <script>
+      var mediaRecorder;
+      var stream;
+      var chunks = [];
+      var url = null;
+
+      const fileSize = document.getElementById("fileSize"); //创建标签
+      const video = document.getElementById("video"); //创建标签
+      const video2 = document.getElementById("video2"); //创建标签
+
+      /**
+       * 录音举例说明
+       * https://www.cnblogs.com/zaijin-yang/p/17306578.html
+       * 通过 web 录制视频（摄像头）并上传
+       * https://cloud.tencent.com/developer/article/1818977?areaId=106001
+       * 视频录制基础知识-MediaRecorder
+       * https://www.jianshu.com/p/ad7dfd50880e
+       */
+      async function initRecord() {
+        //stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            // video: { facingMode: "environment" },
+          });
+          video.srcObject = stream;
+          video.play();
+          //通过调用getUserMedia方法获取摄像头的实时视频流，并将其赋值给srcObject属性，从而在网页上显示实时视频。
+          //src适用于加载已有的静态视频文件。
+          //srcObject适用于处理实时视频流，比如从摄像头捕获到的视频。
+          mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+              console.log(
+                "======ondataavailable事件触发,chunks.length:",
+                chunks.length
+              );
+              fileSize.innerHTML =
+                (event.data.size / 1024 / 1024).toFixed(2) + "MB";
+              chunks.push(event.data); // 将数据块追加到 chunks 数组中
+            }
+          };
+
+          // 音频设置
+          // mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC); // 设置音频来源从麦克风采集
+          // mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC); // 设置音频编码格式
+          // mediaRecorder.setAudioEncodingBitRate(96000);  // 设置音频编码比特率（一般音乐和语音录制）
+          // mediaRecorder.setAudioSamplingRate(44100);  // 设置音频采样率（CD音质）
+
+          // 视频设置
+          // mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);  // 设置视频来源
+          // mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);  // 设置视频编码格式
+          // mediaRecorder.setVideoSize(width, height);  // 设置视频分辨率大小
+          // mediaRecorder.setVideoFrameRate(30);  // 设置视频帧率
+          // mediaRecorder.setCaptureRate(30); // 设置视频捕获率
+          // int bitRate = width * height * 8;
+          // mediaRecorder.setVideoEncodingBitRate(bitRate);  // 设置比特率
+
+          mediaRecorder.onstop = () => {
+            console.log("======按下了停止录音键", mediaRecorder.mimeType);
+            const blob = new Blob(chunks, { type: mediaRecorder.mimeType }); // 将数据块转换为 Blob
+            // 此时你可以使用 blob 对象，比如上传到服务器或保存到本地文件
+            console.log("Blob created:", blob.size);
+            url = URL.createObjectURL(blob); //创建新的URL表示指定的blob对象
+            video2.src = url;
+            //销毁视频,释放资源URL.revokeObjectURL(url)
+          };
+        } catch (e) {
+          console.log("用户禁止了摄像头权限");
+        }
+      }
+
+      function startRecord() {
+        chunks = [];
+        mediaRecorder.start();
+      }
+
+      function stopRecord() {
+        /**
+         *   mediaRecorder.state返回当前状态 (闲置中，录制中或者暂停 ) (inactive, recording, or paused.)
+         */
+        if (mediaRecorder.state === "recording") {
+          mediaRecorder.stop();
+        }
+      }
+
+      function destroyRecord() {
+        // 终止流（这可以让浏览器上正在录音的标志消失掉）
+        stream.getTracks().forEach((track) => track.stop());
+        stream = null;
+      }
+
+      function pauseRecord() {
+        mediaRecorder.pause();
+      }
+
+      function resumeRecord() {
+        mediaRecorder.resume();
+      }
+    </script>
+  </body>
+</html>
