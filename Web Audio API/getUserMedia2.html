@@ -51,27 +51,34 @@
        * https://www.jianshu.com/p/ad7dfd50880e
        */
       async function initRecord() {
-        //stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        // navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+        //   console.log("stream:", stream);
+        //   video.srcObject = stream;
+        //   video.play();
+        // }).catch(err => {
+        //   console.log(err);
+        // });
         try {
           stream = await navigator.mediaDevices.getUserMedia({
             audio: true,
-            // video: { facingMode: "environment" },
+            video: { facingMode: "environment" },
           });
-          video.srcObject = stream;
+          console.log("stream:", stream);
+          video.srcObject = stream; // video的src属性用于加载已有的静态视频文件，srcObject属性用于加载从麦克风、摄像头捕获到的音视频实时数据流。
           video.play();
           //通过调用getUserMedia方法获取摄像头的实时视频流，并将其赋值给srcObject属性，从而在网页上显示实时视频。
-          //src适用于加载已有的静态视频文件。
-          //srcObject适用于处理实时视频流，比如从摄像头捕获到的视频。
-          mediaRecorder = new MediaRecorder(stream);
+          
+          var options = {
+            audioBitsPerSecond: 128000,
+            videoBitsPerSecond: 2500000,
+            mimeType: 'video/mp4'
+          }
+          mediaRecorder = new MediaRecorder(stream, options);
           mediaRecorder.ondataavailable = (event) => {
             if (event.data.size > 0) {
-              console.log(
-                "======ondataavailable事件触发,chunks.length:",
-                chunks.length
-              );
-              fileSize.innerHTML =
-                (event.data.size / 1024 / 1024).toFixed(2) + "MB";
-              chunks.push(event.data); // 将数据块追加到 chunks 数组中
+              console.log('chunks.length：', chunks.length);
+              fileSize.innerHTML = (event.data.size / 1024 / 1024).toFixed(2) + "MB";
+              chunks.push(event.data);
             }
           };
 
@@ -99,8 +106,8 @@
             video2.src = url;
             //销毁视频,释放资源URL.revokeObjectURL(url)
           };
-        } catch (e) {
-          console.log("用户禁止了摄像头权限");
+        } catch (err) {
+          console.log("用户禁止了摄像头权限", err);
         }
       }
 
@@ -110,11 +117,10 @@
       }
 
       function stopRecord() {
-        /**
-         *   mediaRecorder.state返回当前状态 (闲置中，录制中或者暂停 ) (inactive, recording, or paused.)
-         */
+        // mediaRecorder.state返回当前状态 (闲置中，录制中或者暂停 ) (inactive, recording, or paused.)
         if (mediaRecorder.state === "recording") {
           mediaRecorder.stop();
+          // mediaRecorder.stream.stop(); // 停止流
         }
       }
 
