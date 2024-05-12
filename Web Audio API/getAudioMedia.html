@@ -91,9 +91,9 @@
       window.mediaRecorder.addEventListener('stop', function (e) {
         console.log('onstop', e)
         const blob = new Blob(window.mediaRecorder.chunks, {
-          type: 'video/webm'
+          type: 'audio/webm'
         });
-        console.log(blob)
+        console.log('媒体数据：', blob)
         window.mediaRecorder.chunks = [];
       });
     }

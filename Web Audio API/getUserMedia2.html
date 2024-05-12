@@ -95,12 +95,12 @@
         } catch (err) {
           console.log("用户禁止了摄像头权限", err);
         }
-      }
+      };
 
       function startRecord() {
         chunks = [];
         mediaRecorder.start();
-      }
+      };
 
       function stopRecord() {
         // mediaRecorder.state返回当前状态 (闲置中，录制中或者暂停 ) (inactive, recording, or paused.)
@@ -108,21 +108,21 @@
           mediaRecorder.stop();
           // mediaRecorder.stream.stop(); // 停止流
         }
-      }
+      };
 
       function destroyRecord() {
         // 终止流（这可以让浏览器上正在录音的标志消失掉）
         stream.getTracks().forEach((track) => track.stop());
         stream = null;
-      }
+      };
 
       function pauseRecord() {
         mediaRecorder.pause();
-      }
+      };
 
       function resumeRecord() {
         mediaRecorder.resume();
-      }
+      };
 
 
       /**
