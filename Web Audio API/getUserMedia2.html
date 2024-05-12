@@ -38,27 +38,11 @@
       var chunks = [];
       var url = null;
 
-      const fileSize = document.getElementById("fileSize"); //创建标签
-      const video = document.getElementById("video"); //创建标签
-      const video2 = document.getElementById("video2"); //创建标签
+      const fileSize = document.getElementById("fileSize"); 
+      const video = document.getElementById("video"); 
+      const video2 = document.getElementById("video2"); 
 
-      /**
-       * 录音举例说明
-       * https://www.cnblogs.com/zaijin-yang/p/17306578.html
-       * 通过 web 录制视频（摄像头）并上传
-       * https://cloud.tencent.com/developer/article/1818977?areaId=106001
-       * 视频录制基础知识-MediaRecorder
-       * https://www.jianshu.com/p/ad7dfd50880e
-       * https://www.zuidaima.com/blog/3819727543307264.htm
-       */
       async function initRecord() {
-        // navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
-        //   console.log("stream:", stream);
-        //   video.srcObject = stream;
-        //   video.play();
-        // }).catch(err => {
-        //   console.log(err);
-        // });
         try {
           stream = await navigator.mediaDevices.getUserMedia({
             audio: true,
@@ -139,6 +123,17 @@
       function resumeRecord() {
         mediaRecorder.resume();
       }
+
+
+      /**
+       * 录音举例说明
+       * https://www.cnblogs.com/zaijin-yang/p/17306578.html
+       * 通过 web 录制视频（摄像头）并上传
+       * https://cloud.tencent.com/developer/article/1818977?areaId=106001
+       * 视频录制基础知识-MediaRecorder
+       * https://www.jianshu.com/p/ad7dfd50880e
+       * https://www.zuidaima.com/blog/3819727543307264.htm
+       */
     </script>
   </body>
 </html>
