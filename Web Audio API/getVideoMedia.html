@@ -94,13 +94,11 @@
             imgRef.src = canvas.toDataURL("image/webp");
         };
 
-
         // 关闭摄像头
         function closeCamera() {
-            console.log("关闭摄像头");
             // video.srcObject.getTracks()[0].stop(); // 关闭第1个媒体流轨道
             stream.getTracks().forEach((track) => track.stop()); // 关闭所有媒体流轨道
-        }
+        };
     </script>
 </body>
 
